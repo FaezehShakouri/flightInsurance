@@ -40,7 +40,8 @@ contract FlightDelayPredictionMarket {
 
     mapping(bytes32 flightId => Flight) public flights;
     mapping(bytes32 lightId => mapping(address user => uint256 shares)) public positions;
-    mapping(bytes32 flightId => mapping(address user => mapping(Outcome outcome => uint256 shares))) public outcomePositions;
+    mapping(bytes32 flightId => mapping(address user => mapping(Outcome outcome => uint256 shares))) public
+        outcomePositions;
     mapping(bytes32 flightId => mapping(address user => bool claimed)) public hasClaimed;
     mapping(address oracle => bool authorized) public authorizedOracles;
 
@@ -50,12 +51,14 @@ contract FlightDelayPredictionMarket {
     uint256 public feeDecimalPlaces = 14;
     uint256 public minLiquidity = 1000 wei;
 
-    address public token; // token used for trading 
+    address public token; // token used for trading
 
     // Events
     event MarketResolved(bytes32 indexed flightId, Outcome outcome, uint256 delayDuration);
     event WinningsClaimed(bytes32 indexed flightId, address indexed user, uint256 payout);
-    event SharesPurchased(bytes32 indexed flightId, address indexed user, Outcome outcome, uint256 shares, uint256 amount);
+    event SharesPurchased(
+        bytes32 indexed flightId, address indexed user, Outcome outcome, uint256 shares, uint256 amount
+    );
     event SharesSold(bytes32 indexed flightId, address indexed user, Outcome outcome, uint256 shares, uint256 amount);
 
     constructor(address _token) {
@@ -203,7 +206,7 @@ contract FlightDelayPredictionMarket {
         // We estimate this as proportional to the shares in this outcome
         uint256 totalShares = _getTotalShares(flight);
         uint256 contractBalance = IERC20(token).balanceOf(address(this));
-        
+
         // Estimate liquidity for this outcome based on its share of total
         uint256 outcomeLiquidity = totalShares > 0 ? (outcomeShares * contractBalance) / totalShares : 0;
 
@@ -219,28 +222,28 @@ contract FlightDelayPredictionMarket {
      * @param sharesToSell The number of shares to sell
      * @return tokensToReturn The amount of tokens that will be received
      */
-    function calculateTokensForShares(bytes32 flightId, Outcome outcome, uint256 sharesToSell) 
-        public 
-        view 
-        returns (uint256) 
+    function calculateTokensForShares(bytes32 flightId, Outcome outcome, uint256 sharesToSell)
+        public
+        view
+        returns (uint256)
     {
         Flight storage flight = flights[flightId];
         uint256 outcomeShares = _getOutcomeShares(flight, outcome);
-        
+
         require(outcomeShares > 0, "No shares for this outcome");
         require(sharesToSell <= outcomeShares, "Cannot sell more than outcome shares");
 
         uint256 totalShares = _getTotalShares(flight);
         uint256 contractBalance = IERC20(token).balanceOf(address(this));
-        
+
         // Estimate liquidity for this outcome based on its share of total
         uint256 outcomeLiquidity = (outcomeShares * contractBalance) / totalShares;
-        
+
         // If selling all shares of this outcome, return all its liquidity
         if (sharesToSell == outcomeShares) {
             return outcomeLiquidity;
         }
-        
+
         // Proportional return with bonding curve for this specific outcome
         // tokens_out = outcome_liquidity * shares_to_sell / (outcome_shares + shares_to_sell)
         return (sharesToSell * outcomeLiquidity) / (outcomeShares + sharesToSell);
@@ -251,18 +254,15 @@ contract FlightDelayPredictionMarket {
      * @param flightId The flight market identifier
      * @param delayDuration The delay duration in minutes (0 = on time, type(uint256).max = cancelled)
      */
-    function resolveMarket(bytes32 flightId, uint256 delayDuration) 
-        external 
-        onlyOracle 
-    {
+    function resolveMarket(bytes32 flightId, uint256 delayDuration) external onlyOracle {
         Flight storage flight = flights[flightId];
         require(flight.outcome == Outcome.Unresolved, "Market already resolved");
 
         flight.delayDuration = delayDuration;
-        
+
         // Calculate outcome based on delay duration
         Outcome actualOutcome;
-        
+
         if (delayDuration == type(uint256).max) {
             // Special value for cancelled flights
             actualOutcome = Outcome.Cancelled;
@@ -278,7 +278,7 @@ contract FlightDelayPredictionMarket {
             // delayDuration > 90 (including > 120)
             actualOutcome = Outcome.Delayed120Plus;
         }
-        
+
         flight.outcome = actualOutcome;
 
         emit MarketResolved(flightId, actualOutcome, delayDuration);
@@ -292,7 +292,7 @@ contract FlightDelayPredictionMarket {
         Flight storage flight = flights[flightId];
         require(flight.outcome != Outcome.Unresolved, "Market not resolved yet");
         require(!hasClaimed[flightId][msg.sender], "Already claimed");
-        
+
         // Get user's shares for the winning outcome
         uint256 userWinningShares = outcomePositions[flightId][msg.sender][flight.outcome];
         require(userWinningShares > 0, "No winning shares to claim");
@@ -303,17 +303,17 @@ contract FlightDelayPredictionMarket {
         // Calculate payout based on winning outcome
         uint256 totalWinningShares = _getOutcomeShares(flight, flight.outcome);
         uint256 contractBalance = IERC20(token).balanceOf(address(this));
-        
+
         // Payout = (user's winning shares / total winning shares) * total pool
         // Winners split the entire pot proportionally
         uint256 payout = (userWinningShares * contractBalance) / totalWinningShares;
 
         // Reset user's winning position
         outcomePositions[flightId][msg.sender][flight.outcome] = 0;
-        
+
         // Transfer payout
         require(IERC20(token).transfer(msg.sender, payout), "Payout transfer failed");
-        
+
         emit WinningsClaimed(flightId, msg.sender, payout);
     }
 

@@ -106,7 +106,7 @@ contract FlightDelayPredictionMarketTest is Test {
         uint256 expectedShares2 =
             market.calculateSharesForAmount(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
         assertTrue(expectedShares2 < amount, "Second purchase of same outcome should yield fewer shares");
-        
+
         // But first purchase of DIFFERENT outcome (Delayed30) - should still be 1:1
         uint256 expectedSharesDelayed =
             market.calculateSharesForAmount(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount);
@@ -324,15 +324,12 @@ contract FlightDelayPredictionMarketTest is Test {
         uint256 userShares = market.positions(flightId, user1);
 
         // Test 1: Selling more shares should return more total tokens
-        uint256 tokensFor25Percent = market.calculateTokensForShares(
-            flightId, FlightDelayPredictionMarket.Outcome.OnTime, userShares / 4
-        );
-        uint256 tokensFor50Percent = market.calculateTokensForShares(
-            flightId, FlightDelayPredictionMarket.Outcome.OnTime, userShares / 2
-        );
-        uint256 tokensFor75Percent = market.calculateTokensForShares(
-            flightId, FlightDelayPredictionMarket.Outcome.OnTime, (userShares * 3) / 4
-        );
+        uint256 tokensFor25Percent =
+            market.calculateTokensForShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, userShares / 4);
+        uint256 tokensFor50Percent =
+            market.calculateTokensForShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, userShares / 2);
+        uint256 tokensFor75Percent =
+            market.calculateTokensForShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, (userShares * 3) / 4);
 
         assertTrue(tokensFor50Percent > tokensFor25Percent, "50% shares should return more total tokens than 25%");
         assertTrue(tokensFor75Percent > tokensFor50Percent, "75% shares should return more total tokens than 50%");
@@ -343,11 +340,10 @@ contract FlightDelayPredictionMarketTest is Test {
             tokensFor50Percent < tokensFor25Percent * 2,
             "AMM slippage: 50% shares should return LESS than 2x of 25% (diminishing returns)"
         );
-        
+
         // Verify the diminishing returns continue
         assertTrue(
-            tokensFor75Percent < tokensFor25Percent * 3,
-            "AMM slippage: 75% shares should return LESS than 3x of 25%"
+            tokensFor75Percent < tokensFor25Percent * 3, "AMM slippage: 75% shares should return LESS than 3x of 25%"
         );
     }
 
@@ -378,7 +374,7 @@ contract FlightDelayPredictionMarketTest is Test {
         // With multiple participants, selling should still work correctly
         // The tokens received should be reasonable (not zero, not more than invested)
         assertTrue(tokensToReceive < amount, "Shouldn't receive more than originally invested");
-        
+
         // Should get a significant portion back (at least 10% of investment for selling half shares)
         assertTrue(tokensToReceive > amount / 10, "Should receive meaningful amount for shares");
     }
@@ -402,20 +398,20 @@ contract FlightDelayPredictionMarketTest is Test {
         // Actually sell first 25%
         vm.startPrank(user1);
         market.sellShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, sharesToSellFirst);
-        
+
         uint256 remainingShares = market.positions(flightId, user1);
         uint256 sharesToSellSecond = remainingShares / 3; // Another 25% of original
 
         // Calculate price for next sell (from remaining shares)
         uint256 tokensForSecondSell =
             market.calculateTokensForShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, sharesToSellSecond);
-        
+
         vm.stopPrank();
 
         // Both sells should give positive amounts
         assertTrue(tokensForFirstSell > 0, "First sell should return tokens");
         assertTrue(tokensForSecondSell > 0, "Second sell should return tokens");
-        
+
         // The pricing should be consistent - selling similar amounts should return similar tokens
         // (within reasonable bounds given the AMM dynamics)
         assertTrue(tokensForSecondSell > 0, "Sequential sells should work correctly");
@@ -443,11 +439,8 @@ contract FlightDelayPredictionMarketTest is Test {
         assertTrue(tokensFromSelling < buyAmount, "Sell price should be less than buy price (AMM spread)");
 
         // Should still get a reasonable amount back (at least 20% of invested amount)
-        assertTrue(
-            tokensFromSelling > buyAmount / 5,
-            "Sell price should return meaningful value"
-        );
-        
+        assertTrue(tokensFromSelling > buyAmount / 5, "Sell price should return meaningful value");
+
         // Verify pricing is consistent
         assertTrue(sharesBuyWouldGet > 0, "Should receive shares for buying");
         assertTrue(tokensFromSelling > 0, "Should receive tokens for selling");
@@ -530,7 +523,9 @@ contract FlightDelayPredictionMarketTest is Test {
         market.resolveMarket(newFlightId, 45);
 
         (,,, uint256 delayDuration, FlightDelayPredictionMarket.Outcome outcome,,,,,,) = market.flights(newFlightId);
-        assertEq(uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.Delayed60), "Outcome should be Delayed60");
+        assertEq(
+            uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.Delayed60), "Outcome should be Delayed60"
+        );
         assertEq(delayDuration, 45, "Delay duration should be 45 minutes");
     }
 
@@ -556,7 +551,9 @@ contract FlightDelayPredictionMarketTest is Test {
         market.resolveMarket(newFlightId, type(uint256).max);
 
         (,,, uint256 delayDuration, FlightDelayPredictionMarket.Outcome outcome,,,,,,) = market.flights(newFlightId);
-        assertEq(uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.Cancelled), "Outcome should be Cancelled");
+        assertEq(
+            uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.Cancelled), "Outcome should be Cancelled"
+        );
         assertEq(delayDuration, type(uint256).max, "Delay duration should be max uint256");
     }
 
@@ -565,25 +562,35 @@ contract FlightDelayPredictionMarketTest is Test {
         bytes32 flight1 = market.createFlightMarket("F1", "JFK", "2024-12-31T10:00:00.000");
         market.resolveMarket(flight1, 25);
         (,,,, FlightDelayPredictionMarket.Outcome outcome1,,,,,,) = market.flights(flight1);
-        assertEq(uint256(outcome1), uint256(FlightDelayPredictionMarket.Outcome.Delayed30), "25 min should be Delayed30");
+        assertEq(
+            uint256(outcome1), uint256(FlightDelayPredictionMarket.Outcome.Delayed30), "25 min should be Delayed30"
+        );
 
         // Test Delayed60 (31-60 minutes)
         bytes32 flight2 = market.createFlightMarket("F2", "LAX", "2024-12-31T11:00:00.000");
         market.resolveMarket(flight2, 45);
         (,,,, FlightDelayPredictionMarket.Outcome outcome2,,,,,,) = market.flights(flight2);
-        assertEq(uint256(outcome2), uint256(FlightDelayPredictionMarket.Outcome.Delayed60), "45 min should be Delayed60");
+        assertEq(
+            uint256(outcome2), uint256(FlightDelayPredictionMarket.Outcome.Delayed60), "45 min should be Delayed60"
+        );
 
         // Test Delayed90 (61-90 minutes)
         bytes32 flight3 = market.createFlightMarket("F3", "MIA", "2024-12-31T12:00:00.000");
         market.resolveMarket(flight3, 75);
         (,,,, FlightDelayPredictionMarket.Outcome outcome3,,,,,,) = market.flights(flight3);
-        assertEq(uint256(outcome3), uint256(FlightDelayPredictionMarket.Outcome.Delayed90), "75 min should be Delayed90");
+        assertEq(
+            uint256(outcome3), uint256(FlightDelayPredictionMarket.Outcome.Delayed90), "75 min should be Delayed90"
+        );
 
         // Test Delayed120Plus (>90 minutes)
         bytes32 flight4 = market.createFlightMarket("F4", "SEA", "2024-12-31T13:00:00.000");
         market.resolveMarket(flight4, 150);
         (,,,, FlightDelayPredictionMarket.Outcome outcome4,,,,,,) = market.flights(flight4);
-        assertEq(uint256(outcome4), uint256(FlightDelayPredictionMarket.Outcome.Delayed120Plus), "150 min should be Delayed120Plus");
+        assertEq(
+            uint256(outcome4),
+            uint256(FlightDelayPredictionMarket.Outcome.Delayed120Plus),
+            "150 min should be Delayed120Plus"
+        );
     }
 
     // ===== Claim Winnings Tests =====
@@ -681,7 +688,7 @@ contract FlightDelayPredictionMarketTest is Test {
         // Due to AMM: user1 bought first (cheaper) so got more shares
         // User1 should get more winnings (they have more shares)
         assertTrue(user1Winnings > user2Winnings, "User1 (first buyer) should get more due to having more shares");
-        
+
         // Total payout should equal total pot
         assertTrue(user1Winnings + user2Winnings <= 200 ether, "Total cannot exceed pot");
     }
@@ -756,11 +763,11 @@ contract FlightDelayPredictionMarketTest is Test {
         // So user1 actually has MORE shares and will get MORE payout!
         // This demonstrates the advantage of early entry in AMM markets
         assertTrue(user1Winnings > user2Winnings, "User1 (early buyer) gets more despite investing less");
-        
+
         // Both should get positive winnings
         assertTrue(user1Winnings > 0, "User1 should get winnings");
         assertTrue(user2Winnings > 0, "User2 should get winnings");
-        
+
         // Total payout should not exceed pot (400 ETH)
         // Note: Due to sequential claim recalculation, full pot may not be distributed
         assertTrue(user1Winnings + user2Winnings <= 400 ether, "Total cannot exceed pot");
@@ -810,13 +817,13 @@ contract FlightDelayPredictionMarketTest is Test {
         // Total payout will be less than full pot due to this.
         assertTrue(totalPayout > 230 ether, "Total payout should be significant");
         assertTrue(totalPayout <= 300 ether, "Total payout cannot exceed total investment");
-        
+
         // First claimer should profit significantly
         assertTrue(user1Payout > amount, "User1 (first claimer) should profit");
         assertTrue(user3Payout > 0, "User3 should get some payout");
-        
+
         // Verify market resolved correctly
-        (,,, , FlightDelayPredictionMarket.Outcome outcome,,,,,,) = market.flights(flightId);
+        (,,,, FlightDelayPredictionMarket.Outcome outcome,,,,,,) = market.flights(flightId);
         assertEq(uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.OnTime), "Market should be resolved");
     }
 
@@ -870,7 +877,7 @@ contract FlightDelayPredictionMarketTest is Test {
         // User1 heavily buys OnTime (making it "more likely")
         vm.startPrank(user1);
         token.approve(address(market), amount * 5);
-        for (uint i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 5; i++) {
             market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
         }
         vm.stopPrank();
@@ -971,17 +978,15 @@ contract FlightDelayPredictionMarketTest is Test {
         uint256 user1Shares = market.positions(flightId, user1);
         uint256 user2Shares = market.positions(flightId, user2);
 
-        uint256 user1Tokens = market.calculateTokensForShares(
-            flightId, FlightDelayPredictionMarket.Outcome.OnTime, user1Shares
-        );
-        uint256 user2Tokens = market.calculateTokensForShares(
-            flightId, FlightDelayPredictionMarket.Outcome.Delayed30, user2Shares
-        );
+        uint256 user1Tokens =
+            market.calculateTokensForShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, user1Shares);
+        uint256 user2Tokens =
+            market.calculateTokensForShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, user2Shares);
 
         // Both should get similar amounts since they invested same and have same shares
         assertTrue(user1Tokens > amount / 2, "User1 should get significant value back");
         assertTrue(user2Tokens > amount / 2, "User2 should get significant value back");
-        
+
         // Should be approximately equal (within 10%)
         assertTrue(
             user1Tokens * 110 / 100 >= user2Tokens && user1Tokens * 90 / 100 <= user2Tokens,
@@ -1014,7 +1019,7 @@ contract FlightDelayPredictionMarketTest is Test {
 
         address user3 = makeAddr("user3");
         token.mint(user3, 1000 ether);
-        
+
         vm.startPrank(user3);
         token.approve(address(market), amount);
         market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
