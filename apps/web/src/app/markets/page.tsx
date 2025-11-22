@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-type OutcomeType = "DELAY_30" | "DELAY_60" | "DELAY_90" | "CANCEL";
+type OutcomeType = "DELAY_30" | "CANCEL";
 
 type MarketOutcome = {
   type: OutcomeType;
@@ -32,8 +32,6 @@ type FlightMarket = {
 
 const outcomeLabels: Record<OutcomeType, string> = {
   DELAY_30: "30 min delay",
-  DELAY_60: "60 min delay",
-  DELAY_90: "90+ min delay",
   CANCEL: "Cancellation",
 };
 
@@ -48,27 +46,15 @@ const marketsSeed: FlightMarket[] = [
     outcomes: [
       {
         type: "DELAY_30",
-        yesPrice: 0.12,
-        impliedProbability: 12,
-        coverageDemand: 4200,
-      },
-      {
-        type: "DELAY_60",
-        yesPrice: 0.22,
-        impliedProbability: 22,
+        yesPrice: 0.18,
+        impliedProbability: 18,
         coverageDemand: 12800,
       },
       {
-        type: "DELAY_90",
-        yesPrice: 0.28,
-        impliedProbability: 28,
-        coverageDemand: 7600,
-      },
-      {
         type: "CANCEL",
-        yesPrice: 0.36,
-        impliedProbability: 36,
-        coverageDemand: 5400,
+        yesPrice: 0.32,
+        impliedProbability: 32,
+        coverageDemand: 7600,
       },
     ],
   },
@@ -82,26 +68,14 @@ const marketsSeed: FlightMarket[] = [
     outcomes: [
       {
         type: "DELAY_30",
-        yesPrice: 0.08,
-        impliedProbability: 8,
-        coverageDemand: 3100,
-      },
-      {
-        type: "DELAY_60",
-        yesPrice: 0.15,
-        impliedProbability: 15,
+        yesPrice: 0.12,
+        impliedProbability: 12,
         coverageDemand: 6400,
       },
       {
-        type: "DELAY_90",
-        yesPrice: 0.19,
-        impliedProbability: 19,
-        coverageDemand: 4100,
-      },
-      {
         type: "CANCEL",
-        yesPrice: 0.17,
-        impliedProbability: 17,
+        yesPrice: 0.24,
+        impliedProbability: 24,
         coverageDemand: 9800,
       },
     ],
@@ -116,26 +90,14 @@ const marketsSeed: FlightMarket[] = [
     outcomes: [
       {
         type: "DELAY_30",
-        yesPrice: 0.18,
-        impliedProbability: 18,
-        coverageDemand: 5400,
-      },
-      {
-        type: "DELAY_60",
-        yesPrice: 0.24,
-        impliedProbability: 24,
+        yesPrice: 0.2,
+        impliedProbability: 20,
         coverageDemand: 9600,
       },
       {
-        type: "DELAY_90",
-        yesPrice: 0.29,
-        impliedProbability: 29,
-        coverageDemand: 16500,
-      },
-      {
         type: "CANCEL",
-        yesPrice: 0.34,
-        impliedProbability: 34,
+        yesPrice: 0.35,
+        impliedProbability: 35,
         coverageDemand: 8500,
       },
     ],
@@ -150,27 +112,15 @@ const marketsSeed: FlightMarket[] = [
     outcomes: [
       {
         type: "DELAY_30",
-        yesPrice: 0.12,
-        impliedProbability: 12,
-        coverageDemand: 6200,
-      },
-      {
-        type: "DELAY_60",
-        yesPrice: 0.18,
-        impliedProbability: 18,
+        yesPrice: 0.14,
+        impliedProbability: 14,
         coverageDemand: 7200,
       },
       {
-        type: "DELAY_90",
-        yesPrice: 0.24,
-        impliedProbability: 24,
-        coverageDemand: 4700,
-      },
-      {
         type: "CANCEL",
-        yesPrice: 0.32,
-        impliedProbability: 32,
-        coverageDemand: 3900,
+        yesPrice: 0.3,
+        impliedProbability: 30,
+        coverageDemand: 4700,
       },
     ],
   },
@@ -184,26 +134,14 @@ const marketsSeed: FlightMarket[] = [
     outcomes: [
       {
         type: "DELAY_30",
-        yesPrice: 0.09,
-        impliedProbability: 9,
+        yesPrice: 0.11,
+        impliedProbability: 11,
         coverageDemand: 4800,
       },
       {
-        type: "DELAY_60",
-        yesPrice: 0.14,
-        impliedProbability: 14,
-        coverageDemand: 6900,
-      },
-      {
-        type: "DELAY_90",
-        yesPrice: 0.2,
-        impliedProbability: 20,
-        coverageDemand: 5400,
-      },
-      {
         type: "CANCEL",
-        yesPrice: 0.27,
-        impliedProbability: 27,
+        yesPrice: 0.25,
+        impliedProbability: 25,
         coverageDemand: 6200,
       },
     ],
@@ -218,26 +156,14 @@ const marketsSeed: FlightMarket[] = [
     outcomes: [
       {
         type: "DELAY_30",
-        yesPrice: 0.17,
-        impliedProbability: 17,
-        coverageDemand: 6800,
-      },
-      {
-        type: "DELAY_60",
-        yesPrice: 0.24,
-        impliedProbability: 24,
+        yesPrice: 0.2,
+        impliedProbability: 20,
         coverageDemand: 10400,
       },
       {
-        type: "DELAY_90",
-        yesPrice: 0.31,
-        impliedProbability: 31,
-        coverageDemand: 21200,
-      },
-      {
         type: "CANCEL",
-        yesPrice: 0.36,
-        impliedProbability: 36,
+        yesPrice: 0.38,
+        impliedProbability: 38,
         coverageDemand: 15800,
       },
     ],
@@ -266,8 +192,6 @@ const kpiTiles = [
 const outcomeFilters: Array<{ label: string; value: OutcomeType | "ALL" }> = [
   { label: "All triggers", value: "ALL" },
   { label: "30 min delay", value: "DELAY_30" },
-  { label: "60 min delay", value: "DELAY_60" },
-  { label: "90+ min delay", value: "DELAY_90" },
   { label: "Cancellation", value: "CANCEL" },
 ];
 

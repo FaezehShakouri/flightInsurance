@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-type OutcomeType = "DELAY_30" | "DELAY_60" | "DELAY_90" | "CANCEL";
+type OutcomeType = "DELAY_30" | "CANCEL";
 
 type FlightMarket = {
   id: string;
@@ -60,7 +60,7 @@ const seedMarkets: FlightMarket[] = [
     impliedProbability: 29,
     totalLiquidity: 28750,
     coverageDemand: 16500,
-    outcomeType: "DELAY_90",
+    outcomeType: "DELAY_30",
   },
 ];
 
@@ -110,10 +110,8 @@ export default function BetPage() {
 
   const premiumQuote = useMemo(() => {
     const outcomeBase: Record<OutcomeType, number> = {
-      DELAY_30: 0.14,
-      DELAY_60: 0.18,
-      DELAY_90: 0.23,
-      CANCEL: 0.28,
+      DELAY_30: 0.18,
+      CANCEL: 0.32,
     };
     const base = outcomeBase[outcomeType];
     const coverageFactor = Math.min(0.08, (formState.coverage || 0) / 5000);
@@ -134,8 +132,6 @@ export default function BetPage() {
   const previewDate = formState.departureDate || "Dec 03, 2024";
   const outcomeLabels: Record<OutcomeType, string> = {
     DELAY_30: "30 min delay",
-    DELAY_60: "60 min delay",
-    DELAY_90: "90+ min delay",
     CANCEL: "Cancellation",
   };
 
@@ -371,8 +367,6 @@ export default function BetPage() {
                       className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-base text-white focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
                     >
                       <option value="DELAY_30">30 min delay</option>
-                      <option value="DELAY_60">60 min delay</option>
-                      <option value="DELAY_90">90+ min delay</option>
                       <option value="CANCEL">Cancellation</option>
                     </select>
                   </div>
