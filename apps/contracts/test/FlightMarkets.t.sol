@@ -17,8 +17,8 @@ contract FlightDelayPredictionMarketTest is Test {
 
     function setUp() public {
         owner = address(this);
-        user1 = address(0x1);
-        user2 = address(0x2);
+        user1 = makeAddr("user1");
+        user2 = makeAddr("user2");
 
         // Deploy mock token
         token = new MockERC20();
