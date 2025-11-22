@@ -147,17 +147,17 @@ export default function BetPage() {
     marketCount: number
   ) => [
     {
-      label: "Current quote",
+      label: "Risk quote",
       value: percent.format(quote / 100),
       icon: "☁️",
     },
     {
-      label: "Premium due",
+      label: "Premium today",
       value: currency.format(premium || 0),
       icon: "🛡️",
     },
     {
-      label: "Markets live",
+      label: "Flights monitored",
       value: `${marketCount}`,
       icon: "🛫",
     },
@@ -240,15 +240,15 @@ export default function BetPage() {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4">
         <header className="text-center space-y-3">
           <p className="text-xs uppercase tracking-[0.4em] text-indigo-500">
-            Flight coverage desk
+            SkyShield underwriting desk
           </p>
           <h1 className="text-4xl font-semibold text-slate-900 sm:text-5xl">
-            Place a bet on your next flight
+            Get a flight insurance quote in seconds
           </h1>
           <p className="text-base text-slate-600">
-            Enter the flight, choose what you want to insure, and let the market
-            quote the odds. We will spin up a new market automatically if one
-            does not exist yet.
+            Enter your flight, choose the delay or cancellation trigger, and we
+            will price the policy. If a pool does not exist yet, we launch one
+            on the fly.
           </p>
         </header>
 
@@ -276,10 +276,10 @@ export default function BetPage() {
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <Card className="shadow-xl ring-1 ring-sky-100/70 bg-white/95">
             <CardHeader>
-              <CardTitle>Bet builder</CardTitle>
+              <CardTitle>Flight insurance request</CardTitle>
               <CardDescription>
-                Tell us about your flight and target payout. We will quote a
-                price and handle market creation if it does not exist yet.
+                Provide flight details and desired payout. We auto-route the
+                request to the right prediction market.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -384,7 +384,7 @@ export default function BetPage() {
                   type="submit"
                   className="w-full bg-sky-600 text-white shadow-sm transition hover:bg-sky-500"
                 >
-                  Place bet / request cover
+                  Submit for underwriting
                 </Button>
               </form>
             </CardContent>
@@ -406,10 +406,10 @@ export default function BetPage() {
           <div className="space-y-6">
             <Card className="shadow-xl ring-1 ring-sky-100/70 bg-white/95">
               <CardHeader>
-                <CardTitle>Bet preview</CardTitle>
+                <CardTitle>Flight insurance summary</CardTitle>
                 <CardDescription>
-                  Quotes refresh as you type. Actual pricing will come from the
-                  on-chain AMM.
+                  Live snapshot of the policy request exactly as the AMM sees
+                  it.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -469,24 +469,24 @@ export default function BetPage() {
 
             <Card className="shadow-lg ring-1 ring-slate-100 bg-white/95">
               <CardHeader>
-                <CardTitle>Why prediction markets?</CardTitle>
+                <CardTitle>How SkyShield settles policies</CardTitle>
                 <CardDescription>
-                  Every bet is collateralized on-chain and priced by an AMM so
-                  travelers always get transparent odds.
+                  Every policy flows through a collateralized prediction market
+                  so payouts stay transparent.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-slate-600">
                 <p>
-                  1. Enter flight and payout target. We quote a YES share price
-                  based on market odds.
+                  1. File the route and payout target. We quote a YES share
+                  price from the AMM curve.
                 </p>
                 <p>
-                  2. If no market exists yet, your request bootstraps liquidity
-                  so insurers can back the risk.
+                  2. No pool yet? Your request bootstraps liquidity so insurers
+                  can underwrite instantly.
                 </p>
                 <p>
-                  3. At departure, an oracle reports the outcome. YES shares pay
-                  1 USDC if the delay/cancel rule is met.
+                  3. After departure, the oracle posts the status. YES shares
+                  pay 1 USDC if the trigger hits.
                 </p>
               </CardContent>
             </Card>
@@ -499,9 +499,9 @@ export default function BetPage() {
         >
           <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle>Active flight markets</CardTitle>
+              <CardTitle>Active coverage pools</CardTitle>
               <CardDescription>
-                Tap a row to auto-fill the form with an existing market.
+                Tap a pool to auto-fill the intake form with its flight details.
               </CardDescription>
             </div>
             <span className="text-sm font-medium text-indigo-600">
