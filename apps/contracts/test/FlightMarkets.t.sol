@@ -31,17 +31,18 @@ contract FlightDelayPredictionMarketTest is Test {
         token.mint(user2, 1000 ether);
 
         // Create a flight market
-        flightId = market.createFlightMarket("AA100", "JFK", "AA", "2024-12-25T10:00:00.000");
+        flightId = market.createFlightMarket("AA100", "JFK", "LAX", "AA", "2024-12-25T10:00:00.000");
     }
 
     function testCreateFlightMarket() public {
-        bytes32 newFlightId = market.createFlightMarket("UA200", "LAX", "UA", "2024-12-26T15:30:00.000");
+        bytes32 newFlightId = market.createFlightMarket("UA200", "LAX", "ORD", "UA", "2024-12-26T15:30:00.000");
 
-        (string memory flightNumber, string memory airportCode, string memory airlineCode, string memory scheduledTime,,,,,,) =
+        (string memory flightNumber, string memory departureCode, string memory destinationCode, string memory airlineCode, string memory scheduledTime,,,,,) =
             market.flights(newFlightId);
 
         assertEq(flightNumber, "UA200", "Flight number should match");
-        assertEq(airportCode, "LAX", "Airport code should match");
+        assertEq(departureCode, "LAX", "Departure code should match");
+        assertEq(destinationCode, "ORD", "Destination code should match");
         assertEq(airlineCode, "UA", "Airline code should match");
         assertEq(scheduledTime, "2024-12-26T15:30:00.000", "Scheduled time should match");
     }
@@ -506,85 +507,82 @@ contract FlightDelayPredictionMarketTest is Test {
 
     function testResolveMarket() public {
         // Create and resolve a market
-        bytes32 newFlightId = market.createFlightMarket("DL123", "ATL", "DL", "2024-12-30T14:00:00.000");
+        bytes32 newFlightId = market.createFlightMarket("DL123", "ATL", "MIA", "DL", "2024-12-30T14:00:00.000");
 
-        // Resolve the market with 0 delay (OnTime)
-        market.resolveMarket(newFlightId, 0);
+        // Resolve the market as OnTime
+        market.resolveMarket(newFlightId, FlightDelayPredictionMarket.Outcome.OnTime);
 
         // Check the outcome was set correctly
-        (,,,, uint256 delayDuration, FlightDelayPredictionMarket.Outcome outcome,,,,) = market.flights(newFlightId);
+        (,,,,,FlightDelayPredictionMarket.Outcome outcome,,,,) = market.flights(newFlightId);
         assertEq(uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.OnTime), "Outcome should be OnTime");
-        assertEq(delayDuration, 0, "Delay duration should be 0");
     }
 
     function testResolveMarketWithDelay() public {
-        bytes32 newFlightId = market.createFlightMarket("DL456", "ATL", "DL", "2024-12-30:15:00:00.000");
+        bytes32 newFlightId = market.createFlightMarket("DL456", "ATL", "JFK", "DL", "2024-12-30:15:00:00.000");
 
-        // Resolve with 45 minute delay (should be Delayed120Plus category since >30 minutes)
-        market.resolveMarket(newFlightId, 45);
+        // Resolve with Delayed120Plus outcome
+        market.resolveMarket(newFlightId, FlightDelayPredictionMarket.Outcome.Delayed120Plus);
 
-        (,,,, uint256 delayDuration, FlightDelayPredictionMarket.Outcome outcome,,,,) = market.flights(newFlightId);
+        (,,,,,FlightDelayPredictionMarket.Outcome outcome,,,,) = market.flights(newFlightId);
         assertEq(
             uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.Delayed120Plus), "Outcome should be Delayed120Plus"
         );
-        assertEq(delayDuration, 45, "Delay duration should be 45 minutes");
     }
 
     function testResolveMarketRevertsIfAlreadyResolved() public {
-        market.resolveMarket(flightId, 0);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
 
         // Try to resolve again
         vm.expectRevert("Market already resolved");
-        market.resolveMarket(flightId, 15);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.Delayed30);
     }
 
     function testResolveMarketRevertsIfNotOracle() public {
         vm.startPrank(user1);
         vm.expectRevert("Only authorized oracles can call this function");
-        market.resolveMarket(flightId, 0);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
         vm.stopPrank();
     }
 
     function testResolveMarketWithCancelled() public {
-        bytes32 newFlightId = market.createFlightMarket("UA789", "ORD", "UA", "2024-12-31T18:00:00.000");
+        bytes32 newFlightId = market.createFlightMarket("UA789", "ORD", "DFW", "UA", "2024-12-31T18:00:00.000");
 
-        // Resolve as cancelled (using max uint256 as special value)
-        market.resolveMarket(newFlightId, type(uint256).max);
+        // Resolve as cancelled
+        market.resolveMarket(newFlightId, FlightDelayPredictionMarket.Outcome.Cancelled);
 
-        (,,,, uint256 delayDuration, FlightDelayPredictionMarket.Outcome outcome,,,,) = market.flights(newFlightId);
+        (,,,,,FlightDelayPredictionMarket.Outcome outcome,,,,) = market.flights(newFlightId);
         assertEq(
             uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.Cancelled), "Outcome should be Cancelled"
         );
-        assertEq(delayDuration, type(uint256).max, "Delay duration should be max uint256");
     }
 
     function testResolveMarketDelayCategories() public {
-        // Test Delayed30 (1-30 minutes)
-        bytes32 flight1 = market.createFlightMarket("F1", "JFK", "AA", "2024-12-31T10:00:00.000");
-        market.resolveMarket(flight1, 25);
-        (,,,,, FlightDelayPredictionMarket.Outcome outcome1,,,,) = market.flights(flight1);
+        // Test Delayed30
+        bytes32 flight1 = market.createFlightMarket("F1", "JFK", "BOS", "AA", "2024-12-31T10:00:00.000");
+        market.resolveMarket(flight1, FlightDelayPredictionMarket.Outcome.Delayed30);
+        (,,,,,FlightDelayPredictionMarket.Outcome outcome1,,,,) = market.flights(flight1);
         assertEq(
-            uint256(outcome1), uint256(FlightDelayPredictionMarket.Outcome.Delayed30), "25 min should be Delayed30"
+            uint256(outcome1), uint256(FlightDelayPredictionMarket.Outcome.Delayed30), "Should be Delayed30"
         );
 
-        // Test Delayed120Plus (>30 minutes)
-        bytes32 flight2 = market.createFlightMarket("F2", "LAX", "UA", "2024-12-31T11:00:00.000");
-        market.resolveMarket(flight2, 45);
-        (,,,,, FlightDelayPredictionMarket.Outcome outcome2,,,,) = market.flights(flight2);
+        // Test Delayed120Plus
+        bytes32 flight2 = market.createFlightMarket("F2", "LAX", "SFO", "UA", "2024-12-31T11:00:00.000");
+        market.resolveMarket(flight2, FlightDelayPredictionMarket.Outcome.Delayed120Plus);
+        (,,,,,FlightDelayPredictionMarket.Outcome outcome2,,,,) = market.flights(flight2);
         assertEq(
             uint256(outcome2),
             uint256(FlightDelayPredictionMarket.Outcome.Delayed120Plus),
-            "45 min should be Delayed120Plus"
+            "Should be Delayed120Plus"
         );
 
-        // Test Delayed120Plus (much longer delays)
-        bytes32 flight3 = market.createFlightMarket("F3", "SEA", "AS", "2024-12-31T13:00:00.000");
-        market.resolveMarket(flight3, 150);
-        (,,,,, FlightDelayPredictionMarket.Outcome outcome3,,,,) = market.flights(flight3);
+        // Test OnTime
+        bytes32 flight3 = market.createFlightMarket("F3", "SEA", "PDX", "AS", "2024-12-31T13:00:00.000");
+        market.resolveMarket(flight3, FlightDelayPredictionMarket.Outcome.OnTime);
+        (,,,,,FlightDelayPredictionMarket.Outcome outcome3,,,,) = market.flights(flight3);
         assertEq(
             uint256(outcome3),
-            uint256(FlightDelayPredictionMarket.Outcome.Delayed120Plus),
-            "150 min should be Delayed120Plus"
+            uint256(FlightDelayPredictionMarket.Outcome.OnTime),
+            "Should be OnTime"
         );
     }
 
@@ -606,7 +604,7 @@ contract FlightDelayPredictionMarketTest is Test {
         vm.stopPrank();
 
         // Resolve market as OnTime (user1 wins)
-        market.resolveMarket(flightId, 0);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
 
         // User1 claims winnings
         uint256 balanceBefore = token.balanceOf(user1);
@@ -639,7 +637,7 @@ contract FlightDelayPredictionMarketTest is Test {
         vm.stopPrank();
 
         // Resolve market as OnTime (user2 loses)
-        market.resolveMarket(flightId, 0);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
 
         // User2 tries to claim (they lost)
         vm.startPrank(user2);
@@ -663,7 +661,7 @@ contract FlightDelayPredictionMarketTest is Test {
         vm.stopPrank();
 
         // Resolve as OnTime (both win)
-        market.resolveMarket(flightId, 0);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
 
         // Both claim
         uint256 user1BalanceBefore = token.balanceOf(user1);
@@ -710,7 +708,7 @@ contract FlightDelayPredictionMarketTest is Test {
         vm.stopPrank();
 
         // Resolve as OnTime
-        market.resolveMarket(flightId, 0);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
 
         // Claim once
         vm.prank(user1);
@@ -739,7 +737,7 @@ contract FlightDelayPredictionMarketTest is Test {
         vm.stopPrank();
 
         // Resolve as OnTime
-        market.resolveMarket(flightId, 0);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
 
         // Claim winnings
         uint256 user1BalanceBefore = token.balanceOf(user1);
@@ -791,7 +789,7 @@ contract FlightDelayPredictionMarketTest is Test {
         vm.stopPrank();
 
         // Resolve market
-        market.resolveMarket(flightId, 0);
+        market.resolveMarket(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
 
         // Winners claim (user1 and user3)
         uint256 user1Before = token.balanceOf(user1);

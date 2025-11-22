@@ -24,10 +24,10 @@ contract FlightDelayPredictionMarket {
 
     struct Flight {
         string flightNumber;
-        string airportCode; // code of the airport of departure (e.g. "LAX")
+        string departureCode; // code of the departure airport (e.g. "LAX")
+        string destinationCode; // code of the destination airport (e.g. "JFK")
         string airlineCode; // code of the airline (e.g. "AA")
         string scheduledTime; // Date of the flight in YYYY-MM-DDThh:mm:ss.sss format compatible with oracle
-        uint256 delayDuration; // Duration of the delay in minutes
         Outcome outcome;
         uint256 totalOnTimeShares;
         uint256 totalCancelledShares;
@@ -51,7 +51,7 @@ contract FlightDelayPredictionMarket {
     address public token; // token used for trading
 
     // Events
-    event MarketResolved(bytes32 indexed flightId, Outcome outcome, uint256 delayDuration);
+    event MarketResolved(bytes32 indexed flightId, Outcome outcome);
     event WinningsClaimed(bytes32 indexed flightId, address indexed user, uint256 payout);
     event SharesPurchased(
         bytes32 indexed flightId, address indexed user, Outcome outcome, uint256 shares, uint256 amount
@@ -99,20 +99,22 @@ contract FlightDelayPredictionMarket {
         minLiquidity = newMinLiquidity;
     }
 
-    function createFlightMarket(string memory flightNumber, string memory airportCode, string memory airlineCode, string memory scheduledTime)
-        external
-        onlyOwner
-        returns (bytes32)
-    {
+    function createFlightMarket(
+        string memory flightNumber,
+        string memory departureCode,
+        string memory destinationCode,
+        string memory airlineCode,
+        string memory scheduledTime
+    ) external onlyOwner returns (bytes32) {
         // todo: should not allow to create market after scheduled time
-        bytes32 flightId = keccak256(abi.encodePacked(flightNumber, airportCode, airlineCode, scheduledTime));
+        bytes32 flightId = keccak256(abi.encodePacked(flightNumber, departureCode, destinationCode, airlineCode, scheduledTime));
         require(flights[flightId].outcome == Outcome.Unresolved, "Flight market already exists");
         flights[flightId] = Flight({
             flightNumber: flightNumber,
-            airportCode: airportCode,
+            departureCode: departureCode,
+            destinationCode: destinationCode,
             airlineCode: airlineCode,
             scheduledTime: scheduledTime,
-            delayDuration: 0, // will be set by oracle after flight is completed
             outcome: Outcome.Unresolved,
             totalOnTimeShares: 0,
             totalCancelledShares: 0,
@@ -246,34 +248,18 @@ contract FlightDelayPredictionMarket {
     }
 
     /**
-     * @notice Resolve a flight market based on delay duration
+     * @notice Resolve a flight market with the actual outcome
      * @param flightId The flight market identifier
-     * @param delayDuration The delay duration in minutes (0 = on time, type(uint256).max = cancelled)
+     * @param actualOutcome The actual outcome of the flight
      */
-    function resolveMarket(bytes32 flightId, uint256 delayDuration) external onlyOracle {
+    function resolveMarket(bytes32 flightId, Outcome actualOutcome) external onlyOracle {
         Flight storage flight = flights[flightId];
         require(flight.outcome == Outcome.Unresolved, "Market already resolved");
-
-        flight.delayDuration = delayDuration;
-
-        // Calculate outcome based on delay duration
-        Outcome actualOutcome;
-
-        if (delayDuration == type(uint256).max) {
-            // Special value for cancelled flights
-            actualOutcome = Outcome.Cancelled;
-        } else if (delayDuration == 0) {
-            actualOutcome = Outcome.OnTime;
-        } else if (delayDuration <= 30) {
-            actualOutcome = Outcome.Delayed30;
-        } else {
-            // delayDuration > 30 minutes
-            actualOutcome = Outcome.Delayed120Plus;
-        }
+        require(actualOutcome != Outcome.Unresolved, "Cannot resolve to Unresolved");
 
         flight.outcome = actualOutcome;
 
-        emit MarketResolved(flightId, actualOutcome, delayDuration);
+        emit MarketResolved(flightId, actualOutcome);
     }
 
     /**
@@ -348,5 +334,135 @@ contract FlightDelayPredictionMarket {
         else if (outcome == Outcome.Cancelled) flight.totalCancelledShares = newShares;
         else if (outcome == Outcome.Delayed30) flight.totalDelayed30Shares = newShares;
         else if (outcome == Outcome.Delayed120Plus) flight.totalDelayed120PlusShares = newShares;
+    }
+
+    // View functions for getting all flight information
+
+    struct FlightInfo {
+        bytes32 flightId;
+        string flightNumber;
+        string departureCode;
+        string destinationCode;
+        string airlineCode;
+        string scheduledTime;
+        Outcome outcome;
+        uint256 totalOnTimeShares;
+        uint256 totalCancelledShares;
+        uint256 totalDelayed30Shares;
+        uint256 totalDelayed120PlusShares;
+        uint256 onTimeProbability; // scaled by 1e18
+        uint256 cancelledProbability; // scaled by 1e18
+        uint256 delayed30Probability; // scaled by 1e18
+        uint256 delayed120PlusProbability; // scaled by 1e18
+    }
+
+    /**
+     * @notice Get all flights with their details and probabilities
+     * @return allFlights Array of FlightInfo structs containing all flight data
+     */
+    function getAllFlights() external view returns (FlightInfo[] memory) {
+        FlightInfo[] memory allFlights = new FlightInfo[](flightIds.length);
+
+        for (uint256 i = 0; i < flightIds.length; i++) {
+            bytes32 flightId = flightIds[i];
+            Flight storage flight = flights[flightId];
+            uint256 totalShares = _getTotalShares(flight);
+
+            // Calculate probabilities
+            uint256 onTimeProb;
+            uint256 cancelledProb;
+            uint256 delayed30Prob;
+            uint256 delayed120PlusProb;
+
+            if (totalShares == 0) {
+                // Equal probability for all outcomes initially (1/4 = 25%)
+                onTimeProb = 250000000000000000;
+                cancelledProb = 250000000000000000;
+                delayed30Prob = 250000000000000000;
+                delayed120PlusProb = 250000000000000000;
+            } else {
+                onTimeProb = (flight.totalOnTimeShares * 1e18) / totalShares;
+                cancelledProb = (flight.totalCancelledShares * 1e18) / totalShares;
+                delayed30Prob = (flight.totalDelayed30Shares * 1e18) / totalShares;
+                delayed120PlusProb = (flight.totalDelayed120PlusShares * 1e18) / totalShares;
+            }
+
+            allFlights[i] = FlightInfo({
+                flightId: flightId,
+                flightNumber: flight.flightNumber,
+                departureCode: flight.departureCode,
+                destinationCode: flight.destinationCode,
+                airlineCode: flight.airlineCode,
+                scheduledTime: flight.scheduledTime,
+                outcome: flight.outcome,
+                totalOnTimeShares: flight.totalOnTimeShares,
+                totalCancelledShares: flight.totalCancelledShares,
+                totalDelayed30Shares: flight.totalDelayed30Shares,
+                totalDelayed120PlusShares: flight.totalDelayed120PlusShares,
+                onTimeProbability: onTimeProb,
+                cancelledProbability: cancelledProb,
+                delayed30Probability: delayed30Prob,
+                delayed120PlusProbability: delayed120PlusProb
+            });
+        }
+
+        return allFlights;
+    }
+
+    /**
+     * @notice Get specific flight info with probabilities
+     * @param flightId The flight market identifier
+     * @return info FlightInfo struct containing flight data and probabilities
+     */
+    function getFlightInfo(bytes32 flightId) external view returns (FlightInfo memory) {
+        Flight storage flight = flights[flightId];
+        require(flight.outcome != Outcome.Unresolved || bytes(flight.flightNumber).length > 0, "Flight does not exist");
+
+        uint256 totalShares = _getTotalShares(flight);
+
+        // Calculate probabilities
+        uint256 onTimeProb;
+        uint256 cancelledProb;
+        uint256 delayed30Prob;
+        uint256 delayed120PlusProb;
+
+        if (totalShares == 0) {
+            // Equal probability for all outcomes initially (1/4 = 25%)
+            onTimeProb = 250000000000000000;
+            cancelledProb = 250000000000000000;
+            delayed30Prob = 250000000000000000;
+            delayed120PlusProb = 250000000000000000;
+        } else {
+            onTimeProb = (flight.totalOnTimeShares * 1e18) / totalShares;
+            cancelledProb = (flight.totalCancelledShares * 1e18) / totalShares;
+            delayed30Prob = (flight.totalDelayed30Shares * 1e18) / totalShares;
+            delayed120PlusProb = (flight.totalDelayed120PlusShares * 1e18) / totalShares;
+        }
+
+        return FlightInfo({
+            flightId: flightId,
+            flightNumber: flight.flightNumber,
+            departureCode: flight.departureCode,
+            destinationCode: flight.destinationCode,
+            airlineCode: flight.airlineCode,
+            scheduledTime: flight.scheduledTime,
+            outcome: flight.outcome,
+            totalOnTimeShares: flight.totalOnTimeShares,
+            totalCancelledShares: flight.totalCancelledShares,
+            totalDelayed30Shares: flight.totalDelayed30Shares,
+            totalDelayed120PlusShares: flight.totalDelayed120PlusShares,
+            onTimeProbability: onTimeProb,
+            cancelledProbability: cancelledProb,
+            delayed30Probability: delayed30Prob,
+            delayed120PlusProbability: delayed120PlusProb
+        });
+    }
+
+    /**
+     * @notice Get the total number of flights
+     * @return count The number of flight markets created
+     */
+    function getFlightCount() external view returns (uint256) {
+        return flightIds.length;
     }
 }
