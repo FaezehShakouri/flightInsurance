@@ -18,23 +18,20 @@ contract FlightDelayPredictionMarket {
         Unresolved,
         OnTime,
         Delayed30,
-        Delayed60,
-        Delayed90,
         Delayed120Plus,
         Cancelled
     }
 
     struct Flight {
         string flightNumber;
-        string iataCode; // IATA code of the airport of departure
+        string airportCode; // code of the airport of departure (e.g. "LAX")
+        string airlineCode; // code of the airline (e.g. "AA")
         string scheduledTime; // Date of the flight in YYYY-MM-DDThh:mm:ss.sss format compatible with oracle
         uint256 delayDuration; // Duration of the delay in minutes
         Outcome outcome;
         uint256 totalOnTimeShares;
         uint256 totalCancelledShares;
         uint256 totalDelayed30Shares;
-        uint256 totalDelayed60Shares;
-        uint256 totalDelayed90Shares;
         uint256 totalDelayed120PlusShares;
     }
 
@@ -102,25 +99,24 @@ contract FlightDelayPredictionMarket {
         minLiquidity = newMinLiquidity;
     }
 
-    function createFlightMarket(string memory flightNumber, string memory iataCode, string memory scheduledTime)
+    function createFlightMarket(string memory flightNumber, string memory airportCode, string memory airlineCode, string memory scheduledTime)
         external
         onlyOwner
         returns (bytes32)
     {
         // todo: should not allow to create market after scheduled time
-        bytes32 flightId = keccak256(abi.encodePacked(flightNumber, iataCode, scheduledTime));
+        bytes32 flightId = keccak256(abi.encodePacked(flightNumber, airportCode, airlineCode, scheduledTime));
         require(flights[flightId].outcome == Outcome.Unresolved, "Flight market already exists");
         flights[flightId] = Flight({
             flightNumber: flightNumber,
-            iataCode: iataCode,
+            airportCode: airportCode,
+            airlineCode: airlineCode,
             scheduledTime: scheduledTime,
             delayDuration: 0, // will be set by oracle after flight is completed
             outcome: Outcome.Unresolved,
             totalOnTimeShares: 0,
             totalCancelledShares: 0,
             totalDelayed30Shares: 0,
-            totalDelayed60Shares: 0,
-            totalDelayed90Shares: 0,
             totalDelayed120PlusShares: 0
         });
         flightIds.push(flightId);
@@ -270,12 +266,8 @@ contract FlightDelayPredictionMarket {
             actualOutcome = Outcome.OnTime;
         } else if (delayDuration <= 30) {
             actualOutcome = Outcome.Delayed30;
-        } else if (delayDuration <= 60) {
-            actualOutcome = Outcome.Delayed60;
-        } else if (delayDuration <= 90) {
-            actualOutcome = Outcome.Delayed90;
         } else {
-            // delayDuration > 90 (including > 120)
+            // delayDuration > 30 minutes
             actualOutcome = Outcome.Delayed120Plus;
         }
 
@@ -328,8 +320,8 @@ contract FlightDelayPredictionMarket {
         uint256 totalShares = _getTotalShares(flight);
 
         if (totalShares == 0) {
-            // Equal probability for all outcomes initially (1/6 = ~16.67%)
-            return 166666666666666666; // ~16.67% probability per outcome
+            // Equal probability for all outcomes initially (1/4 = 25%)
+            return 250000000000000000; // 25% probability per outcome
         }
 
         uint256 outcomeShares = _getOutcomeShares(flight, outcome);
@@ -340,15 +332,13 @@ contract FlightDelayPredictionMarket {
     // Internal helper functions
     function _getTotalShares(Flight storage flight) internal view returns (uint256) {
         return flight.totalOnTimeShares + flight.totalCancelledShares + flight.totalDelayed30Shares
-            + flight.totalDelayed60Shares + flight.totalDelayed90Shares + flight.totalDelayed120PlusShares;
+            + flight.totalDelayed120PlusShares;
     }
 
     function _getOutcomeShares(Flight storage flight, Outcome outcome) internal view returns (uint256) {
         if (outcome == Outcome.OnTime) return flight.totalOnTimeShares;
         if (outcome == Outcome.Cancelled) return flight.totalCancelledShares;
         if (outcome == Outcome.Delayed30) return flight.totalDelayed30Shares;
-        if (outcome == Outcome.Delayed60) return flight.totalDelayed60Shares;
-        if (outcome == Outcome.Delayed90) return flight.totalDelayed90Shares;
         if (outcome == Outcome.Delayed120Plus) return flight.totalDelayed120PlusShares;
         return 0;
     }
@@ -357,8 +347,6 @@ contract FlightDelayPredictionMarket {
         if (outcome == Outcome.OnTime) flight.totalOnTimeShares = newShares;
         else if (outcome == Outcome.Cancelled) flight.totalCancelledShares = newShares;
         else if (outcome == Outcome.Delayed30) flight.totalDelayed30Shares = newShares;
-        else if (outcome == Outcome.Delayed60) flight.totalDelayed60Shares = newShares;
-        else if (outcome == Outcome.Delayed90) flight.totalDelayed90Shares = newShares;
         else if (outcome == Outcome.Delayed120Plus) flight.totalDelayed120PlusShares = newShares;
     }
 }
