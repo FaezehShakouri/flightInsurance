@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
@@ -475,25 +474,6 @@ export default function MarketsPage() {
                       </div>
                     </div>
                   ))}
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    asChild
-                    className="flex-1 bg-white text-slate-900 hover:bg-slate-100"
-                  >
-                    <Link
-                      href={`/bet?flight=${market.flightNumber}&date=${market.departureDate}`}
-                    >
-                      Request coverage
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-white/30 bg-transparent text-white hover:border-sky-200 hover:bg-sky-200/10"
-                  >
-                    Share
-                  </Button>
                 </div>
               </CardContent>
             </Card>
