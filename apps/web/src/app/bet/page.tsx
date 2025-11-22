@@ -38,7 +38,7 @@ const seedMarkets: FlightMarket[] = [
     impliedProbability: 22,
     totalLiquidity: 32500,
     coverageDemand: 12800,
-    outcomeType: "DELAY",
+    outcomeType: "DELAY_30",
   },
   {
     id: "UA881-2024-12-02",
@@ -60,7 +60,7 @@ const seedMarkets: FlightMarket[] = [
     impliedProbability: 29,
     totalLiquidity: 28750,
     coverageDemand: 16500,
-    outcomeType: "DELAY",
+    outcomeType: "DELAY_90",
   },
 ];
 
