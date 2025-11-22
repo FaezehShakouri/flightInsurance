@@ -187,27 +187,33 @@ contract FlightDelayPredictionMarket {
     }
 
     /**
-     * @notice Calculate how many shares will be received for a given amount using bonding curve
-     * @dev Uses proportional pricing based on current liquidity
+     * @notice Calculate how many shares will be received for a given amount using outcome-specific bonding curve
+     * @dev Uses proportional pricing based on the specific outcome's liquidity
      */
     function calculateSharesForAmount(bytes32 flightId, Outcome outcome, uint256 amount) public view returns (uint256) {
         Flight storage flight = flights[flightId];
-        uint256 totalShares = _getTotalShares(flight);
+        uint256 outcomeShares = _getOutcomeShares(flight, outcome);
 
-        // Initialize market with 1:1 ratio if empty
-        if (totalShares == 0) {
+        // Initialize market with 1:1 ratio if this is the first purchase for this outcome
+        if (outcomeShares == 0) {
             return amount;
         }
 
+        // Get total liquidity allocated to this specific outcome
+        // We estimate this as proportional to the shares in this outcome
+        uint256 totalShares = _getTotalShares(flight);
         uint256 contractBalance = IERC20(token).balanceOf(address(this));
+        
+        // Estimate liquidity for this outcome based on its share of total
+        uint256 outcomeLiquidity = totalShares > 0 ? (outcomeShares * contractBalance) / totalShares : 0;
 
-        // Proportional bonding curve: shares_out = (amount * total_shares) / (balance + amount)
-        // This ensures that adding liquidity doesn't drastically change share price
-        return (amount * totalShares) / (contractBalance + amount);
+        // Proportional bonding curve for this specific outcome
+        // shares_out = (amount * outcome_shares) / (outcome_liquidity + amount)
+        return (amount * outcomeShares) / (outcomeLiquidity + amount);
     }
 
     /**
-     * @notice Calculate how many tokens will be received for selling shares
+     * @notice Calculate how many tokens will be received for selling shares (outcome-specific)
      * @param flightId The flight market identifier
      * @param outcome The outcome to sell shares for
      * @param sharesToSell The number of shares to sell
@@ -219,22 +225,25 @@ contract FlightDelayPredictionMarket {
         returns (uint256) 
     {
         Flight storage flight = flights[flightId];
-        uint256 totalShares = _getTotalShares(flight);
+        uint256 outcomeShares = _getOutcomeShares(flight, outcome);
         
-        require(totalShares > 0, "No shares in market");
-        require(sharesToSell <= totalShares, "Cannot sell more than total shares");
+        require(outcomeShares > 0, "No shares for this outcome");
+        require(sharesToSell <= outcomeShares, "Cannot sell more than outcome shares");
 
+        uint256 totalShares = _getTotalShares(flight);
         uint256 contractBalance = IERC20(token).balanceOf(address(this));
         
-        // If selling all shares, return all tokens
-        if (sharesToSell == totalShares) {
-            return contractBalance;
+        // Estimate liquidity for this outcome based on its share of total
+        uint256 outcomeLiquidity = (outcomeShares * contractBalance) / totalShares;
+        
+        // If selling all shares of this outcome, return all its liquidity
+        if (sharesToSell == outcomeShares) {
+            return outcomeLiquidity;
         }
         
-        // Proportional return with bonding curve: 
-        // tokens_out = balance * shares_to_sell / (total_shares + shares_to_sell)
-        // This creates symmetric buy/sell pricing
-        return (sharesToSell * contractBalance) / (totalShares + sharesToSell);
+        // Proportional return with bonding curve for this specific outcome
+        // tokens_out = outcome_liquidity * shares_to_sell / (outcome_shares + shares_to_sell)
+        return (sharesToSell * outcomeLiquidity) / (outcomeShares + sharesToSell);
     }
 
     /**
