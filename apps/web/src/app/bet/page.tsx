@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-type OutcomeType = "DELAY" | "CANCEL";
+type OutcomeType = "DELAY_30" | "DELAY_60" | "DELAY_90" | "CANCEL";
 
 type FlightMarket = {
   id: string;
@@ -88,7 +88,7 @@ export default function BetPage() {
   const { address } = useAccount();
 
   const [markets, setMarkets] = useState<FlightMarket[]>(seedMarkets);
-  const [outcomeType, setOutcomeType] = useState<OutcomeType>("DELAY");
+  const [outcomeType, setOutcomeType] = useState<OutcomeType>("DELAY_30");
   const [formState, setFormState] = useState<FormState>({
     flightNumber: "",
     departureDate: "",
@@ -109,7 +109,13 @@ export default function BetPage() {
   const normalizedFlightNumber = formState.flightNumber.trim().toUpperCase();
 
   const premiumQuote = useMemo(() => {
-    const base = outcomeType === "DELAY" ? 0.18 : 0.12;
+    const outcomeBase: Record<OutcomeType, number> = {
+      DELAY_30: 0.14,
+      DELAY_60: 0.18,
+      DELAY_90: 0.23,
+      CANCEL: 0.28,
+    };
+    const base = outcomeBase[outcomeType];
     const coverageFactor = Math.min(0.08, (formState.coverage || 0) / 5000);
     const quotedPrice = Number((base + coverageFactor).toFixed(2));
     const premium = Number(
@@ -126,8 +132,14 @@ export default function BetPage() {
   const previewFlightNumber = normalizedFlightNumber || "AF008";
   const previewRoute = formState.route || "CDG → JFK";
   const previewDate = formState.departureDate || "Dec 03, 2024";
-  const previewOutcomeLabel =
-    outcomeType === "DELAY" ? "Delay risk" : "Cancellation risk";
+  const outcomeLabels: Record<OutcomeType, string> = {
+    DELAY_30: "30 min delay",
+    DELAY_60: "60 min delay",
+    DELAY_90: "90+ min delay",
+    CANCEL: "Cancellation",
+  };
+
+  const previewOutcomeLabel = outcomeLabels[outcomeType];
 
   const insightTiles = (
     quote: number,
@@ -358,9 +370,11 @@ export default function BetPage() {
                       onChange={(event) =>
                         setOutcomeType(event.target.value as OutcomeType)
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-base focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-base focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
                     >
-                      <option value="DELAY">Delay over 2 hours</option>
+                      <option value="DELAY_30">30 min delay</option>
+                      <option value="DELAY_60">60 min delay</option>
+                      <option value="DELAY_90">90+ min delay</option>
                       <option value="CANCEL">Cancellation</option>
                     </select>
                   </div>
@@ -407,22 +421,20 @@ export default function BetPage() {
                     {travelerName} · {walletAddress.slice(0, 6)}...
                   </p>
                   <div className="mt-4 space-y-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Flight</span>
-                      <span className="font-mono">{previewFlightNumber}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Date</span>
-                      <span>{previewDate}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Route</span>
-                      <span>{previewRoute}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Outcome</span>
-                      <span>{previewOutcomeLabel}</span>
-                    </div>
+                    {[
+                      { label: "Flight", value: previewFlightNumber },
+                      { label: "Date", value: previewDate },
+                      { label: "Route", value: previewRoute },
+                      { label: "Outcome", value: previewOutcomeLabel },
+                    ].map((detail) => (
+                      <div
+                        key={detail.label}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-slate-400">{detail.label}</span>
+                        <span>{detail.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -544,7 +556,7 @@ export default function BetPage() {
                       {market.departureDate}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
-                      {market.outcomeType === "DELAY" ? "Delay" : "Cancel"}
+                      {outcomeLabels[market.outcomeType]}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-slate-900">
                       {currency.format(market.yesPrice)}
