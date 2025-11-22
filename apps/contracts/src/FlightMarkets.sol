@@ -144,28 +144,83 @@ contract FlightDelayPredictionMarket {
     }
 
     /**
-     * @notice Calculate how many shares will be received for a given amount using constant product formula
-     * @dev Uses simplified AMM: shares = amount * (1 + currentShares) / price
+     * @notice Sell shares for a specific outcome and receive tokens using AMM pricing
+     * @param flightId The flight market identifier
+     * @param outcome The outcome to sell shares for
+     * @param sharesToSell The number of shares to sell
+     */
+    function sellShares(bytes32 flightId, Outcome outcome, uint256 sharesToSell) external marketActive(flightId) {
+        require(outcome != Outcome.Unresolved, "Cannot sell unresolved outcome");
+        require(sharesToSell > 0, "Shares must be greater than 0");
+        require(positions[flightId][msg.sender] >= sharesToSell, "Insufficient shares");
+
+        Flight storage flight = flights[flightId];
+        uint256 currentOutcomeShares = _getOutcomeShares(flight, outcome);
+        require(currentOutcomeShares >= sharesToSell, "Insufficient outcome shares in pool");
+
+        // Calculate tokens to return based on AMM pricing
+        uint256 tokensToReturn = calculateTokensForShares(flightId, outcome, sharesToSell);
+        require(tokensToReturn > 0, "Shares too small");
+
+        // Update the outcome pool (reduce shares)
+        _updateOutcomeShares(flight, outcome, currentOutcomeShares - sharesToSell);
+
+        // Update user's position (reduce shares)
+        positions[flightId][msg.sender] -= sharesToSell;
+
+        // Transfer tokens from contract to user
+        require(IERC20(token).transfer(msg.sender, tokensToReturn), "Token transfer failed");
+    }
+
+    /**
+     * @notice Calculate how many shares will be received for a given amount using bonding curve
+     * @dev Uses proportional pricing based on current liquidity
      */
     function calculateSharesForAmount(bytes32 flightId, Outcome outcome, uint256 amount) public view returns (uint256) {
         Flight storage flight = flights[flightId];
         uint256 totalShares = _getTotalShares(flight);
 
-        // Initialize market with minimum liquidity if empty
+        // Initialize market with 1:1 ratio if empty
         if (totalShares == 0) {
             return amount;
         }
 
         uint256 contractBalance = IERC20(token).balanceOf(address(this));
 
-        // Constant product AMM: k = x * y
-        // For multi-outcome: simplified pricing based on relative share distribution
-        // shares_to_mint = amount * total_shares / (total_value + amount)
-        uint256 k = totalShares * contractBalance;
-        uint256 newTotalValue = contractBalance + amount;
-        uint256 newTotalShares = k / newTotalValue;
+        // Proportional bonding curve: shares_out = (amount * total_shares) / (balance + amount)
+        // This ensures that adding liquidity doesn't drastically change share price
+        return (amount * totalShares) / (contractBalance + amount);
+    }
 
-        return totalShares - newTotalShares;
+    /**
+     * @notice Calculate how many tokens will be received for selling shares
+     * @param flightId The flight market identifier
+     * @param outcome The outcome to sell shares for
+     * @param sharesToSell The number of shares to sell
+     * @return tokensToReturn The amount of tokens that will be received
+     */
+    function calculateTokensForShares(bytes32 flightId, Outcome outcome, uint256 sharesToSell) 
+        public 
+        view 
+        returns (uint256) 
+    {
+        Flight storage flight = flights[flightId];
+        uint256 totalShares = _getTotalShares(flight);
+        
+        require(totalShares > 0, "No shares in market");
+        require(sharesToSell <= totalShares, "Cannot sell more than total shares");
+
+        uint256 contractBalance = IERC20(token).balanceOf(address(this));
+        
+        // If selling all shares, return all tokens
+        if (sharesToSell == totalShares) {
+            return contractBalance;
+        }
+        
+        // Proportional return with bonding curve: 
+        // tokens_out = balance * shares_to_sell / (total_shares + shares_to_sell)
+        // This creates symmetric buy/sell pricing
+        return (sharesToSell * contractBalance) / (totalShares + sharesToSell);
     }
 
     /**
