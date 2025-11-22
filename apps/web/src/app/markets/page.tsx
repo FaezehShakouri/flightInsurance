@@ -14,17 +14,21 @@ import { Button } from "@/components/ui/button";
 
 type OutcomeType = "DELAY_30" | "DELAY_60" | "DELAY_90" | "CANCEL";
 
+type MarketOutcome = {
+  type: OutcomeType;
+  yesPrice: number;
+  impliedProbability: number;
+  coverageDemand: number;
+};
+
 type FlightMarket = {
   id: string;
   flightNumber: string;
   departureDate: string;
   route: string;
-  yesPrice: number;
-  impliedProbability: number;
   totalLiquidity: number;
-  coverageDemand: number;
-  outcomeType: OutcomeType;
   airline: string;
+  outcomes: MarketOutcome[];
 };
 
 const outcomeLabels: Record<OutcomeType, string> = {
@@ -40,72 +44,204 @@ const marketsSeed: FlightMarket[] = [
     flightNumber: "DL104",
     departureDate: "2024-12-01",
     route: "JFK → LAX",
-    yesPrice: 0.22,
-    impliedProbability: 22,
     totalLiquidity: 32500,
-    coverageDemand: 12800,
-    outcomeType: "DELAY_60",
     airline: "Delta",
+    outcomes: [
+      {
+        type: "DELAY_30",
+        yesPrice: 0.12,
+        impliedProbability: 12,
+        coverageDemand: 4200,
+      },
+      {
+        type: "DELAY_60",
+        yesPrice: 0.22,
+        impliedProbability: 22,
+        coverageDemand: 12800,
+      },
+      {
+        type: "DELAY_90",
+        yesPrice: 0.28,
+        impliedProbability: 28,
+        coverageDemand: 7600,
+      },
+      {
+        type: "CANCEL",
+        yesPrice: 0.36,
+        impliedProbability: 36,
+        coverageDemand: 5400,
+      },
+    ],
   },
   {
     id: "UA881-2024-12-02",
     flightNumber: "UA881",
     departureDate: "2024-12-02",
     route: "SFO → NRT",
-    yesPrice: 0.17,
-    impliedProbability: 17,
     totalLiquidity: 41200,
-    coverageDemand: 9800,
-    outcomeType: "CANCEL",
     airline: "United",
+    outcomes: [
+      {
+        type: "DELAY_30",
+        yesPrice: 0.08,
+        impliedProbability: 8,
+        coverageDemand: 3100,
+      },
+      {
+        type: "DELAY_60",
+        yesPrice: 0.15,
+        impliedProbability: 15,
+        coverageDemand: 6400,
+      },
+      {
+        type: "DELAY_90",
+        yesPrice: 0.19,
+        impliedProbability: 19,
+        coverageDemand: 4100,
+      },
+      {
+        type: "CANCEL",
+        yesPrice: 0.17,
+        impliedProbability: 17,
+        coverageDemand: 9800,
+      },
+    ],
   },
   {
     id: "AF008-2024-12-03",
     flightNumber: "AF008",
     departureDate: "2024-12-03",
     route: "CDG → JFK",
-    yesPrice: 0.29,
-    impliedProbability: 29,
     totalLiquidity: 28750,
-    coverageDemand: 16500,
-    outcomeType: "DELAY_90",
     airline: "Air France",
+    outcomes: [
+      {
+        type: "DELAY_30",
+        yesPrice: 0.18,
+        impliedProbability: 18,
+        coverageDemand: 5400,
+      },
+      {
+        type: "DELAY_60",
+        yesPrice: 0.24,
+        impliedProbability: 24,
+        coverageDemand: 9600,
+      },
+      {
+        type: "DELAY_90",
+        yesPrice: 0.29,
+        impliedProbability: 29,
+        coverageDemand: 16500,
+      },
+      {
+        type: "CANCEL",
+        yesPrice: 0.34,
+        impliedProbability: 34,
+        coverageDemand: 8500,
+      },
+    ],
   },
   {
     id: "AA079-2024-12-03",
     flightNumber: "AA079",
     departureDate: "2024-12-03",
     route: "DFW → LHR",
-    yesPrice: 0.12,
-    impliedProbability: 12,
     totalLiquidity: 19900,
-    coverageDemand: 6200,
-    outcomeType: "DELAY_30",
     airline: "American",
+    outcomes: [
+      {
+        type: "DELAY_30",
+        yesPrice: 0.12,
+        impliedProbability: 12,
+        coverageDemand: 6200,
+      },
+      {
+        type: "DELAY_60",
+        yesPrice: 0.18,
+        impliedProbability: 18,
+        coverageDemand: 7200,
+      },
+      {
+        type: "DELAY_90",
+        yesPrice: 0.24,
+        impliedProbability: 24,
+        coverageDemand: 4700,
+      },
+      {
+        type: "CANCEL",
+        yesPrice: 0.32,
+        impliedProbability: 32,
+        coverageDemand: 3900,
+      },
+    ],
   },
   {
     id: "SQ025-2024-12-04",
     flightNumber: "SQ025",
     departureDate: "2024-12-04",
     route: "FRA → SIN",
-    yesPrice: 0.09,
-    impliedProbability: 9,
     totalLiquidity: 35600,
-    coverageDemand: 4800,
-    outcomeType: "DELAY_30",
     airline: "Singapore Airlines",
+    outcomes: [
+      {
+        type: "DELAY_30",
+        yesPrice: 0.09,
+        impliedProbability: 9,
+        coverageDemand: 4800,
+      },
+      {
+        type: "DELAY_60",
+        yesPrice: 0.14,
+        impliedProbability: 14,
+        coverageDemand: 6900,
+      },
+      {
+        type: "DELAY_90",
+        yesPrice: 0.2,
+        impliedProbability: 20,
+        coverageDemand: 5400,
+      },
+      {
+        type: "CANCEL",
+        yesPrice: 0.27,
+        impliedProbability: 27,
+        coverageDemand: 6200,
+      },
+    ],
   },
   {
     id: "EK202-2024-12-04",
     flightNumber: "EK202",
     departureDate: "2024-12-04",
     route: "JFK → DXB",
-    yesPrice: 0.31,
-    impliedProbability: 31,
     totalLiquidity: 44100,
-    coverageDemand: 21200,
-    outcomeType: "CANCEL",
     airline: "Emirates",
+    outcomes: [
+      {
+        type: "DELAY_30",
+        yesPrice: 0.17,
+        impliedProbability: 17,
+        coverageDemand: 6800,
+      },
+      {
+        type: "DELAY_60",
+        yesPrice: 0.24,
+        impliedProbability: 24,
+        coverageDemand: 10400,
+      },
+      {
+        type: "DELAY_90",
+        yesPrice: 0.31,
+        impliedProbability: 31,
+        coverageDemand: 21200,
+      },
+      {
+        type: "CANCEL",
+        yesPrice: 0.36,
+        impliedProbability: 36,
+        coverageDemand: 15800,
+      },
+    ],
   },
 ];
 
@@ -145,7 +281,8 @@ export default function MarketsPage() {
   const filteredMarkets = useMemo(() => {
     return marketsSeed.filter((market) => {
       const matchesOutcome =
-        selectedOutcome === "ALL" || market.outcomeType === selectedOutcome;
+        selectedOutcome === "ALL" ||
+        market.outcomes.some((outcome) => outcome.type === selectedOutcome);
       const matchesSearch =
         market.flightNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         market.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,12 +298,23 @@ export default function MarketsPage() {
       0
     );
     const coverage = filteredMarkets.reduce(
-      (sum, market) => sum + market.coverageDemand,
+      (sum, market) =>
+        sum +
+        market.outcomes.reduce(
+          (outcomeSum, outcome) => outcomeSum + outcome.coverageDemand,
+          0
+        ),
       0
     );
     const avgProbability =
       filteredMarkets.reduce(
-        (sum, market) => sum + market.impliedProbability,
+        (sum, market) =>
+          sum +
+          market.outcomes.reduce(
+            (outcomeSum, outcome) => outcomeSum + outcome.impliedProbability,
+            0
+          ) /
+            market.outcomes.length,
         0
       ) / (filteredMarkets.length || 1);
 
@@ -280,50 +428,52 @@ export default function MarketsPage() {
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
                   <p className="text-xs uppercase tracking-wide text-slate-400">
-                    Outcome
+                    Liquidity
                   </p>
                   <p className="text-base text-white">
-                    {outcomeLabels[market.outcomeType]}
+                    {currency.format(market.totalLiquidity)}
                   </p>
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-1 flex-col justify-between space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      YES price
-                    </p>
-                    <p className="text-lg text-white">
-                      {currency.format(market.yesPrice)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Implied probability
-                    </p>
-                    <p className="text-lg text-white">
-                      {percent.format(market.impliedProbability / 100)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Coverage demand
-                    </p>
-                    <p className="text-lg text-white">
-                      {currency.format(market.coverageDemand)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-500">
-                      Liquidity
-                    </p>
-                    <p className="text-lg text-white">
-                      {currency.format(market.totalLiquidity)}
-                    </p>
-                  </div>
+              <CardContent className="flex flex-1 flex-col space-y-4">
+                <div className="space-y-2">
+                  {market.outcomes.map((outcome) => (
+                    <div
+                      key={`${market.id}-${outcome.type}`}
+                      className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-slate-300 sm:text-sm"
+                    >
+                      <div className="flex items-center justify-between gap-2 text-white">
+                        <span className="font-semibold">
+                          {outcomeLabels[outcome.type]}
+                        </span>
+                        <span className="text-sky-200">
+                          {percent.format(outcome.impliedProbability / 100)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          className="flex-1 bg-white text-slate-900 hover:bg-slate-100"
+                          size="sm"
+                        >
+                          Buy YES
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 border-white/30 bg-transparent text-white hover:border-sky-200 hover:bg-sky-200/10"
+                        >
+                          Buy NO
+                        </Button>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 sm:text-xs">
+                        <span>YES {currency.format(outcome.yesPrice)}</span>
+                        <span>Coverage {currency.format(outcome.coverageDemand)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 pt-2">
                   <Button
                     asChild
                     className="flex-1 bg-white text-slate-900 hover:bg-slate-100"
