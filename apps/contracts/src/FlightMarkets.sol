@@ -40,6 +40,8 @@ contract FlightDelayPredictionMarket {
 
     mapping(bytes32 flightId => Flight) public flights;
     mapping(bytes32 lightId => mapping(address user => uint256 shares)) public positions;
+    mapping(bytes32 flightId => mapping(address user => mapping(Outcome outcome => uint256 shares))) public outcomePositions;
+    mapping(bytes32 flightId => mapping(address user => bool claimed)) public hasClaimed;
     mapping(address oracle => bool authorized) public authorizedOracles;
 
     bytes32[] public flightIds;
@@ -48,7 +50,13 @@ contract FlightDelayPredictionMarket {
     uint256 public feeDecimalPlaces = 14;
     uint256 public minLiquidity = 1000 wei;
 
-    address public token; // token used for trading
+    address public token; // token used for trading 
+
+    // Events
+    event MarketResolved(bytes32 indexed flightId, Outcome outcome, uint256 delayDuration);
+    event WinningsClaimed(bytes32 indexed flightId, address indexed user, uint256 payout);
+    event SharesPurchased(bytes32 indexed flightId, address indexed user, Outcome outcome, uint256 shares, uint256 amount);
+    event SharesSold(bytes32 indexed flightId, address indexed user, Outcome outcome, uint256 shares, uint256 amount);
 
     constructor(address _token) {
         owner = msg.sender;
@@ -139,8 +147,11 @@ contract FlightDelayPredictionMarket {
         uint256 currentShares = _getOutcomeShares(flight, outcome);
         _updateOutcomeShares(flight, outcome, currentShares + sharesToMint);
 
-        // Update user's position
+        // Update user's positions (both total and outcome-specific)
         positions[flightId][msg.sender] += sharesToMint;
+        outcomePositions[flightId][msg.sender][outcome] += sharesToMint;
+
+        emit SharesPurchased(flightId, msg.sender, outcome, sharesToMint, amount);
     }
 
     /**
@@ -152,7 +163,7 @@ contract FlightDelayPredictionMarket {
     function sellShares(bytes32 flightId, Outcome outcome, uint256 sharesToSell) external marketActive(flightId) {
         require(outcome != Outcome.Unresolved, "Cannot sell unresolved outcome");
         require(sharesToSell > 0, "Shares must be greater than 0");
-        require(positions[flightId][msg.sender] >= sharesToSell, "Insufficient shares");
+        require(outcomePositions[flightId][msg.sender][outcome] >= sharesToSell, "Insufficient shares for this outcome");
 
         Flight storage flight = flights[flightId];
         uint256 currentOutcomeShares = _getOutcomeShares(flight, outcome);
@@ -165,11 +176,14 @@ contract FlightDelayPredictionMarket {
         // Update the outcome pool (reduce shares)
         _updateOutcomeShares(flight, outcome, currentOutcomeShares - sharesToSell);
 
-        // Update user's position (reduce shares)
+        // Update user's positions (both total and outcome-specific)
         positions[flightId][msg.sender] -= sharesToSell;
+        outcomePositions[flightId][msg.sender][outcome] -= sharesToSell;
 
         // Transfer tokens from contract to user
         require(IERC20(token).transfer(msg.sender, tokensToReturn), "Token transfer failed");
+
+        emit SharesSold(flightId, msg.sender, outcome, sharesToSell, tokensToReturn);
     }
 
     /**
@@ -221,6 +235,77 @@ contract FlightDelayPredictionMarket {
         // tokens_out = balance * shares_to_sell / (total_shares + shares_to_sell)
         // This creates symmetric buy/sell pricing
         return (sharesToSell * contractBalance) / (totalShares + sharesToSell);
+    }
+
+    /**
+     * @notice Resolve a flight market based on delay duration
+     * @param flightId The flight market identifier
+     * @param delayDuration The delay duration in minutes (0 = on time, type(uint256).max = cancelled)
+     */
+    function resolveMarket(bytes32 flightId, uint256 delayDuration) 
+        external 
+        onlyOracle 
+    {
+        Flight storage flight = flights[flightId];
+        require(flight.outcome == Outcome.Unresolved, "Market already resolved");
+
+        flight.delayDuration = delayDuration;
+        
+        // Calculate outcome based on delay duration
+        Outcome actualOutcome;
+        
+        if (delayDuration == type(uint256).max) {
+            // Special value for cancelled flights
+            actualOutcome = Outcome.Cancelled;
+        } else if (delayDuration == 0) {
+            actualOutcome = Outcome.OnTime;
+        } else if (delayDuration <= 30) {
+            actualOutcome = Outcome.Delayed30;
+        } else if (delayDuration <= 60) {
+            actualOutcome = Outcome.Delayed60;
+        } else if (delayDuration <= 90) {
+            actualOutcome = Outcome.Delayed90;
+        } else {
+            // delayDuration > 90 (including > 120)
+            actualOutcome = Outcome.Delayed120Plus;
+        }
+        
+        flight.outcome = actualOutcome;
+
+        emit MarketResolved(flightId, actualOutcome, delayDuration);
+    }
+
+    /**
+     * @notice Claim winnings for a resolved market
+     * @param flightId The flight market identifier
+     */
+    function claimWinnings(bytes32 flightId) external {
+        Flight storage flight = flights[flightId];
+        require(flight.outcome != Outcome.Unresolved, "Market not resolved yet");
+        require(!hasClaimed[flightId][msg.sender], "Already claimed");
+        
+        // Get user's shares for the winning outcome
+        uint256 userWinningShares = outcomePositions[flightId][msg.sender][flight.outcome];
+        require(userWinningShares > 0, "No winning shares to claim");
+
+        // Mark as claimed first (reentrancy protection)
+        hasClaimed[flightId][msg.sender] = true;
+
+        // Calculate payout based on winning outcome
+        uint256 totalWinningShares = _getOutcomeShares(flight, flight.outcome);
+        uint256 contractBalance = IERC20(token).balanceOf(address(this));
+        
+        // Payout = (user's winning shares / total winning shares) * total pool
+        // Winners split the entire pot proportionally
+        uint256 payout = (userWinningShares * contractBalance) / totalWinningShares;
+
+        // Reset user's winning position
+        outcomePositions[flightId][msg.sender][flight.outcome] = 0;
+        
+        // Transfer payout
+        require(IERC20(token).transfer(msg.sender, payout), "Payout transfer failed");
+        
+        emit WinningsClaimed(flightId, msg.sender, payout);
     }
 
     /**
