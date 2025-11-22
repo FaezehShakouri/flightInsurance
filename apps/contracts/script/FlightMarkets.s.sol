@@ -12,7 +12,9 @@ contract FlightDelayPredictionMarketScript is Script {
     function run() public {
         vm.startBroadcast();
 
-        market = new FlightDelayPredictionMarket();
+        // TODO: Replace with actual token address before deployment
+        address tokenAddress = address(0x1234567890123456789012345678901234567890);
+        market = new FlightDelayPredictionMarket(tokenAddress);
 
         vm.stopBroadcast();
     }

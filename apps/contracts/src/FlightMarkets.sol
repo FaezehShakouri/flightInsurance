@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+interface IERC20 {
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+}
+
 /**
  * @title FlightDelayPredictionMarket
  * @notice A prediction market for trading probabilities of flight delays
@@ -42,9 +48,12 @@ contract FlightDelayPredictionMarket {
     uint256 public feeDecimalPlaces = 14;
     uint256 public minLiquidity = 1000 wei;
 
-    constructor() {
+    address public token; // token used for trading 
+
+    constructor(address _token) {
         owner = msg.sender;
         authorizedOracles[msg.sender] = true;
+        token = _token;
     }
 
     modifier onlyOwner() {
@@ -107,19 +116,118 @@ contract FlightDelayPredictionMarket {
         return flightId;
     }
 
-    function updateFlightOutcome(bytes32 flightId, uint256 delayDuration) external onlyOracle marketActive(flightId) {
-        require(delayDuration > 0, "Delay duration must be greater than 0");
-        flights[flightId].delayDuration = delayDuration;
-        if (delayDuration <= 30) {
-            flights[flightId].outcome = Outcome.Delayed30;
-        } else if (delayDuration <= 60) {
-            flights[flightId].outcome = Outcome.Delayed60;
-        } else if (delayDuration <= 90) {
-            flights[flightId].outcome = Outcome.Delayed90;
-        } else if (delayDuration <= 120) {
-            flights[flightId].outcome = Outcome.Delayed120Plus;
-        } else {
-            flights[flightId].outcome = Outcome.Cancelled;
+    /**
+     * @notice Buy shares for a specific outcome using AMM pricing
+     * @param flightId The flight market identifier
+     * @param outcome The outcome to buy shares for
+     * @param amount The amount of tokens to spend
+     */
+    function buyShares(bytes32 flightId, Outcome outcome, uint256 amount) 
+        external 
+        marketActive(flightId) 
+    {
+        require(outcome != Outcome.Unresolved, "Cannot buy unresolved outcome");
+        require(amount > 0, "Amount must be greater than 0");
+
+        Flight storage flight = flights[flightId];
+        
+        // Calculate shares to mint based on AMM pricing
+        uint256 sharesToMint = calculateSharesForAmount(flightId, outcome, amount);
+        require(sharesToMint > 0, "Amount too small");
+
+        // Transfer tokens from user to contract
+        require(
+            IERC20(token).transferFrom(msg.sender, address(this), amount),
+            "Token transfer failed"
+        );
+
+        // Update the outcome pool
+        uint256 currentShares = _getOutcomeShares(flight, outcome);
+        _updateOutcomeShares(flight, outcome, currentShares + sharesToMint);
+        
+        // Update user's position
+        positions[flightId][msg.sender] += sharesToMint;
+    }
+
+    /**
+     * @notice Calculate how many shares will be received for a given amount using constant product formula
+     * @dev Uses simplified AMM: shares = amount * (1 + currentShares) / price
+     */
+    function calculateSharesForAmount(bytes32 flightId, Outcome outcome, uint256 amount) 
+        public 
+        view 
+        returns (uint256) 
+    {
+        Flight storage flight = flights[flightId];
+        uint256 totalShares = _getTotalShares(flight);
+        
+        // Initialize market with minimum liquidity if empty
+        if (totalShares == 0) {
+            return amount;
         }
+
+        uint256 contractBalance = IERC20(token).balanceOf(address(this));
+        
+        // Constant product AMM: k = x * y
+        // For multi-outcome: simplified pricing based on relative share distribution
+        // shares_to_mint = amount * total_shares / (total_value + amount)
+        uint256 k = totalShares * contractBalance;
+        uint256 newTotalValue = contractBalance + amount;
+        uint256 newTotalShares = k / newTotalValue;
+        
+        return totalShares - newTotalShares;
+    }
+
+    /**
+     * @notice Get the current price for buying shares of a specific outcome
+     * @param flightId The flight market identifier
+     * @param outcome The outcome to get price for
+     * @return price The price per share (scaled by 1e18)
+     */
+    function getPrice(bytes32 flightId, Outcome outcome) 
+        external 
+        view 
+        returns (uint256) 
+    {
+        Flight storage flight = flights[flightId];
+        uint256 totalShares = _getTotalShares(flight);
+        
+        if (totalShares == 0) {
+            // Equal probability for all outcomes initially (1/6 = ~16.67%)
+            return 166666666666666666; // ~16.67% probability per outcome
+        }
+
+        uint256 outcomeShares = _getOutcomeShares(flight, outcome);
+        // Price = share of total pool (probability)
+        return (outcomeShares * 1e18) / totalShares;
+    }
+
+    // Internal helper functions
+    function _getTotalShares(Flight storage flight) internal view returns (uint256) {
+        return flight.totalOnTimeShares + 
+               flight.totalCancelledShares + 
+               flight.totalDelayed30Shares + 
+               flight.totalDelayed60Shares + 
+               flight.totalDelayed90Shares + 
+               flight.totalDelayed120PlusShares;
+    }
+
+    function _getOutcomeShares(Flight storage flight, Outcome outcome) internal view returns (uint256) {
+        if (outcome == Outcome.OnTime) return flight.totalOnTimeShares;
+        if (outcome == Outcome.Cancelled) return flight.totalCancelledShares;
+        if (outcome == Outcome.Delayed30) return flight.totalDelayed30Shares;
+        if (outcome == Outcome.Delayed60) return flight.totalDelayed60Shares;
+        if (outcome == Outcome.Delayed90) return flight.totalDelayed90Shares;
+        if (outcome == Outcome.Delayed120Plus) return flight.totalDelayed120PlusShares;
+        return 0;
+    }
+
+    function _updateOutcomeShares(Flight storage flight, Outcome outcome, uint256 newShares) internal {
+        if (outcome == Outcome.OnTime) flight.totalOnTimeShares = newShares;
+        else if (outcome == Outcome.Cancelled) flight.totalCancelledShares = newShares;
+        else if (outcome == Outcome.Delayed30) flight.totalDelayed30Shares = newShares;
+        else if (outcome == Outcome.Delayed60) flight.totalDelayed60Shares = newShares;
+        else if (outcome == Outcome.Delayed90) flight.totalDelayed90Shares = newShares;
+        else if (outcome == Outcome.Delayed120Plus) flight.totalDelayed120PlusShares = newShares;
     }
 }
