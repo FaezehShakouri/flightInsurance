@@ -67,13 +67,13 @@ contract FlightDelayPredictionMarketTest is Test {
         uint256 amount1 = 100 ether;
         uint256 amount2 = 50 ether;
 
-        // User1 first purchase
+        // User1 first purchase of OnTime
         vm.startPrank(user1);
         token.approve(address(market), amount1);
         market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount1);
         vm.stopPrank();
 
-        // User2 purchase
+        // User2 buys DIFFERENT outcome (Delayed30) - should get 1:1 as it's first for that outcome
         vm.startPrank(user2);
         token.approve(address(market), amount2);
         market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount2);
@@ -81,9 +81,8 @@ contract FlightDelayPredictionMarketTest is Test {
 
         uint256 user2Shares = market.positions(flightId, user2);
 
-        // Second purchase should yield fewer shares due to AMM pricing
-        assertTrue(user2Shares < amount2, "Second purchase should yield fewer shares");
-        assertTrue(user2Shares > 0, "User2 should have some shares");
+        // With outcome-specific pricing, first purchase of Delayed30 should be 1:1
+        assertEq(user2Shares, amount2, "First purchase of different outcome should be 1:1");
 
         // Check total token balance
         assertEq(token.balanceOf(address(market)), amount1 + amount2, "Market should hold both deposits");
@@ -92,21 +91,26 @@ contract FlightDelayPredictionMarketTest is Test {
     function testCalculateSharesForAmount() public {
         uint256 amount = 100 ether;
 
-        // First purchase - should get 1:1 ratio
+        // First purchase of OnTime - should get 1:1 ratio
         uint256 expectedShares =
             market.calculateSharesForAmount(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
         assertEq(expectedShares, amount, "First purchase should be 1:1");
 
-        // Actually buy shares
+        // Actually buy OnTime shares
         vm.startPrank(user1);
         token.approve(address(market), amount);
         market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
         vm.stopPrank();
 
-        // Second purchase - should get fewer shares
+        // Second purchase of SAME outcome (OnTime) - should get fewer shares due to AMM
         uint256 expectedShares2 =
+            market.calculateSharesForAmount(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        assertTrue(expectedShares2 < amount, "Second purchase of same outcome should yield fewer shares");
+        
+        // But first purchase of DIFFERENT outcome (Delayed30) - should still be 1:1
+        uint256 expectedSharesDelayed =
             market.calculateSharesForAmount(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount);
-        assertTrue(expectedShares2 < amount, "Second purchase should yield fewer shares");
+        assertEq(expectedSharesDelayed, amount, "First purchase of different outcome should be 1:1");
     }
 
     function testBuySharesRevertsOnZeroAmount() public {
@@ -814,5 +818,210 @@ contract FlightDelayPredictionMarketTest is Test {
         // Verify market resolved correctly
         (,,, , FlightDelayPredictionMarket.Outcome outcome,,,,,,) = market.flights(flightId);
         assertEq(uint256(outcome), uint256(FlightDelayPredictionMarket.Outcome.OnTime), "Market should be resolved");
+    }
+
+    // ===== Outcome-Specific Pricing Tests =====
+
+    function testOutcomeIndependentPricing() public {
+        uint256 amount = 100 ether;
+
+        // User1 buys OnTime shares
+        vm.startPrank(user1);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        uint256 user1Shares = market.positions(flightId, user1);
+        vm.stopPrank();
+
+        // User2 buys Delayed30 shares - should get same 1:1 ratio (independent outcome)
+        vm.startPrank(user2);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount);
+        uint256 user2Shares = market.positions(flightId, user2);
+        vm.stopPrank();
+
+        // Both should get 1:1 on first purchase of their respective outcomes
+        assertEq(user1Shares, amount, "User1 should get 1:1 for first OnTime purchase");
+        assertEq(user2Shares, amount, "User2 should get 1:1 for first Delayed30 purchase");
+    }
+
+    function testSameOutcomeAffectsPricing() public {
+        uint256 amount = 100 ether;
+
+        // User1 buys OnTime shares
+        vm.startPrank(user1);
+        token.approve(address(market), amount * 2);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        uint256 firstPurchaseShares = market.positions(flightId, user1);
+
+        // User1 buys MORE OnTime shares - should get fewer per token
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        uint256 totalShares = market.positions(flightId, user1);
+        uint256 secondPurchaseShares = totalShares - firstPurchaseShares;
+        vm.stopPrank();
+
+        // Second purchase of SAME outcome should yield fewer shares
+        assertTrue(secondPurchaseShares < amount, "Second purchase of same outcome should have slippage");
+        assertTrue(secondPurchaseShares > 0, "Should still get some shares");
+    }
+
+    function testPriceReflectsProbability() public {
+        uint256 amount = 100 ether;
+
+        // User1 heavily buys OnTime (making it "more likely")
+        vm.startPrank(user1);
+        token.approve(address(market), amount * 5);
+        for (uint i = 0; i < 5; i++) {
+            market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        }
+        vm.stopPrank();
+
+        // User2 buys a little Delayed30
+        vm.startPrank(user2);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount);
+        vm.stopPrank();
+
+        // Get prices (probabilities)
+        uint256 onTimePrice = market.getPrice(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
+        uint256 delayed30Price = market.getPrice(flightId, FlightDelayPredictionMarket.Outcome.Delayed30);
+
+        // OnTime should have higher implied probability (more shares)
+        assertTrue(onTimePrice > delayed30Price, "Heavily bought outcome should have higher price");
+    }
+
+    function testSellOnlyAffectsSameOutcome() public {
+        uint256 amount = 100 ether;
+
+        // Setup: Both users buy different outcomes
+        vm.startPrank(user1);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount);
+        uint256 user2SharesBefore = market.positions(flightId, user2);
+        vm.stopPrank();
+
+        // User1 sells OnTime shares
+        vm.startPrank(user1);
+        uint256 user1Shares = market.positions(flightId, user1);
+        market.sellShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, user1Shares / 2);
+        vm.stopPrank();
+
+        // User2's Delayed30 shares should be unaffected
+        uint256 user2SharesAfter = market.positions(flightId, user2);
+        assertEq(user2SharesAfter, user2SharesBefore, "Selling different outcome shouldn't affect user2's shares");
+    }
+
+    function testMultipleOutcomesPriceCorrectly() public {
+        uint256 amount = 50 ether;
+
+        // Multiple users buy different outcomes
+        address user3 = makeAddr("user3");
+        address user4 = makeAddr("user4");
+        token.mint(user3, 1000 ether);
+        token.mint(user4, 1000 ether);
+
+        // Each user buys a different outcome
+        vm.startPrank(user1);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount);
+        vm.stopPrank();
+
+        vm.startPrank(user3);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed60, amount);
+        vm.stopPrank();
+
+        vm.startPrank(user4);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.Cancelled, amount);
+        vm.stopPrank();
+
+        // All should have gotten 1:1 on first purchase
+        assertEq(market.positions(flightId, user1), amount, "User1 should have 1:1");
+        assertEq(market.positions(flightId, user2), amount, "User2 should have 1:1");
+        assertEq(market.positions(flightId, user3), amount, "User3 should have 1:1");
+        assertEq(market.positions(flightId, user4), amount, "User4 should have 1:1");
+    }
+
+    function testCalculateTokensForSharesOutcomeSpecific() public {
+        uint256 amount = 100 ether;
+
+        // User1 buys OnTime
+        vm.startPrank(user1);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        vm.stopPrank();
+
+        // User2 buys Delayed30
+        vm.startPrank(user2);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount);
+        vm.stopPrank();
+
+        // Calculate sell value for each
+        uint256 user1Shares = market.positions(flightId, user1);
+        uint256 user2Shares = market.positions(flightId, user2);
+
+        uint256 user1Tokens = market.calculateTokensForShares(
+            flightId, FlightDelayPredictionMarket.Outcome.OnTime, user1Shares
+        );
+        uint256 user2Tokens = market.calculateTokensForShares(
+            flightId, FlightDelayPredictionMarket.Outcome.Delayed30, user2Shares
+        );
+
+        // Both should get similar amounts since they invested same and have same shares
+        assertTrue(user1Tokens > amount / 2, "User1 should get significant value back");
+        assertTrue(user2Tokens > amount / 2, "User2 should get significant value back");
+        
+        // Should be approximately equal (within 10%)
+        assertTrue(
+            user1Tokens * 110 / 100 >= user2Tokens && user1Tokens * 90 / 100 <= user2Tokens,
+            "Values should be similar for same investment in different outcomes"
+        );
+    }
+
+    function testOutcomeSpecificErrorMessages() public {
+        uint256 amount = 100 ether;
+
+        // User1 buys OnTime
+        vm.startPrank(user1);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+
+        // Try to sell Delayed30 shares (user doesn't have any)
+        vm.expectRevert("Insufficient shares for this outcome");
+        market.sellShares(flightId, FlightDelayPredictionMarket.Outcome.Delayed30, amount);
+        vm.stopPrank();
+    }
+
+    function testEdgeCaseAllSharesSameOutcome() public {
+        uint256 amount = 100 ether;
+
+        // Everyone buys the same outcome
+        vm.startPrank(user1);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        vm.stopPrank();
+
+        address user3 = makeAddr("user3");
+        token.mint(user3, 1000 ether);
+        
+        vm.startPrank(user3);
+        token.approve(address(market), amount);
+        market.buyShares(flightId, FlightDelayPredictionMarket.Outcome.OnTime, amount);
+        vm.stopPrank();
+
+        // Price should be very high (close to 100% probability)
+        uint256 price = market.getPrice(flightId, FlightDelayPredictionMarket.Outcome.OnTime);
+        assertTrue(price > 99e16, "When all buy same outcome, price should be near 100%"); // > 99%
     }
 }
