@@ -8,8 +8,16 @@ pragma solidity ^0.8.13;
  */
 contract FlightDelayPredictionMarket {
     // Market outcomes
-    enum Outcome { Unresolved, OnTime, Delayed30, Delayed60, Delayed90, Delayed120Plus, Cancelled }
-    
+    enum Outcome {
+        Unresolved,
+        OnTime,
+        Delayed30,
+        Delayed60,
+        Delayed90,
+        Delayed120Plus,
+        Cancelled
+    }
+
     struct Flight {
         string flightNumber;
         string iataCode; // IATA code of the airport of departure
@@ -24,15 +32,15 @@ contract FlightDelayPredictionMarket {
         uint256 totalDelayed120PlusShares;
     }
 
-    mapping(bytes32 indexed flightId => Flight) public flights;
-    mapping(bytes32 indexed flightId => mapping(address indexed user => Position)) public positions;
-    mapping(address indexed oracle => bool authorized) public authorizedOracles;
+    mapping(bytes32 flightId => Flight) public flights;
+    mapping(bytes32 lightId => mapping(address user => uint256 shares)) public positions;
+    mapping(address oracle => bool authorized) public authorizedOracles;
 
     bytes32[] public flightIds;
     address public owner;
-    uint256 public constant FEE_PERCENTAGE = 2; // 2% trading fee
-    uint256 public constant FEE_DECIMAL_PLACES = 14;
-    uint256 public constant MIN_LIQUIDITY = 1000 wei;
+    uint256 public feePercentage = 2; // 2% trading fee
+    uint256 public feeDecimalPlaces = 14;
+    uint256 public minLiquidity = 1000 wei;
 
     constructor() {
         owner = msg.sender;
@@ -43,12 +51,12 @@ contract FlightDelayPredictionMarket {
         require(msg.sender == owner, "Only owner can call this function");
         _;
     }
-    
+
     modifier onlyOracle() {
         require(authorizedOracles[msg.sender], "Only authorized oracles can call this function");
         _;
     }
-    
+
     modifier marketActive(bytes32 flightId) {
         require(flights[flightId].outcome == Outcome.Unresolved, "Market not active");
         _;
@@ -63,18 +71,55 @@ contract FlightDelayPredictionMarket {
     }
 
     function setFeePercentage(uint256 newFeePercentage) external onlyOwner {
-        FEE_PERCENTAGE = newFeePercentage;
+        feePercentage = newFeePercentage;
     }
 
     function setFeeDecimalPlaces(uint256 newFeeDecimalPlaces) external onlyOwner {
-        FEE_DECIMAL_PLACES = newFeeDecimalPlaces;
+        feeDecimalPlaces = newFeeDecimalPlaces;
     }
 
     function setMinLiquidity(uint256 newMinLiquidity) external onlyOwner {
-        MIN_LIQUIDITY = newMinLiquidity;
+        minLiquidity = newMinLiquidity;
     }
 
-    
-    
-    
+    function createFlightMarket(string memory flightNumber, string memory iataCode, string memory scheduledTime)
+        external
+        onlyOwner
+        returns (bytes32)
+    {
+        // todo: should not allow to create market after scheduled time
+        bytes32 flightId = keccak256(abi.encodePacked(flightNumber, iataCode, scheduledTime));
+        require(flights[flightId].outcome == Outcome.Unresolved, "Flight market already exists");
+        flights[flightId] = Flight({
+            flightNumber: flightNumber,
+            iataCode: iataCode,
+            scheduledTime: scheduledTime,
+            delayDuration: 0, // will be set by oracle after flight is completed
+            outcome: Outcome.Unresolved,
+            totalOnTimeShares: 0,
+            totalCancelledShares: 0,
+            totalDelayed30Shares: 0,
+            totalDelayed60Shares: 0,
+            totalDelayed90Shares: 0,
+            totalDelayed120PlusShares: 0
+        });
+        flightIds.push(flightId);
+        return flightId;
+    }
+
+    function updateFlightOutcome(bytes32 flightId, uint256 delayDuration) external onlyOracle marketActive(flightId) {
+        require(delayDuration > 0, "Delay duration must be greater than 0");
+        flights[flightId].delayDuration = delayDuration;
+        if (delayDuration <= 30) {
+            flights[flightId].outcome = Outcome.Delayed30;
+        } else if (delayDuration <= 60) {
+            flights[flightId].outcome = Outcome.Delayed60;
+        } else if (delayDuration <= 90) {
+            flights[flightId].outcome = Outcome.Delayed90;
+        } else if (delayDuration <= 120) {
+            flights[flightId].outcome = Outcome.Delayed120Plus;
+        } else {
+            flights[flightId].outcome = Outcome.Cancelled;
+        }
+    }
 }

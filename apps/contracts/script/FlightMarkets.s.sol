@@ -2,17 +2,17 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Counter} from "../src/Counter.sol";
+import {FlightDelayPredictionMarket} from "../src/FlightMarkets.sol";
 
-contract CounterScript is Script {
-    Counter public counter;
+contract FlightDelayPredictionMarketScript is Script {
+    FlightDelayPredictionMarket public market;
 
     function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
 
-        counter = new Counter();
+        market = new FlightDelayPredictionMarket();
 
         vm.stopBroadcast();
     }
