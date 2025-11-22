@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const navLinks = [
   { name: "Home", href: "/" },
   { name: "Place Bet", href: "/bet" },
+  { name: "Markets", href: "/markets" },
   { name: "Docs", href: "https://docs.celo.org", external: true },
 ];
 
