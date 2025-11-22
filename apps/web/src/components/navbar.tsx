@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Menu, ExternalLink } from "lucide-react"
 
@@ -14,6 +13,7 @@ import {
 
 const navLinks = [
   { name: "Home", href: "/" },
+  { name: "Place Bet", href: "/bet" },
   { name: "Docs", href: "https://docs.celo.org", external: true },
 ]
 
