@@ -123,6 +123,34 @@ export default function BetPage() {
     };
   }, [formState.coverage, outcomeType]);
 
+  const previewFlightNumber = normalizedFlightNumber || "AF008";
+  const previewRoute = formState.route || "CDG → JFK";
+  const previewDate = formState.departureDate || "Dec 03, 2024";
+  const previewOutcomeLabel =
+    outcomeType === "DELAY" ? "Delay risk" : "Cancellation risk";
+
+  const insightTiles = (
+    quote: number,
+    premium: number,
+    marketCount: number
+  ) => [
+    {
+      label: "Current quote",
+      value: percent.format(quote / 100),
+      icon: "☁️",
+    },
+    {
+      label: "Premium due",
+      value: currency.format(premium || 0),
+      icon: "🛡️",
+    },
+    {
+      label: "Markets live",
+      value: `${marketCount}`,
+      icon: "🛫",
+    },
+  ];
+
   const sortedMarkets = useMemo(
     () =>
       [...markets].sort((a, b) => b.impliedProbability - a.impliedProbability),
@@ -196,23 +224,45 @@ export default function BetPage() {
   };
 
   return (
-    <section className="bg-gradient-to-br from-blue-50 via-slate-50 to-indigo-100 py-12">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4">
-        <header className="text-center">
-          <p className="text-sm uppercase tracking-wide text-indigo-600">
+    <section className="bg-gradient-to-b from-sky-50 via-white to-indigo-50 py-10">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4">
+        <header className="text-center space-y-3">
+          <p className="text-xs uppercase tracking-[0.4em] text-indigo-500">
             Flight coverage desk
           </p>
-          <h1 className="mt-2 text-4xl font-semibold text-slate-900">
+          <h1 className="text-4xl font-semibold text-slate-900 sm:text-5xl">
             Place a bet on your next flight
           </h1>
-          <p className="mt-3 text-base text-slate-600">
-            Enter your flight details and we will match you with an existing
-            prediction market &mdash; or spin up a brand new one if needed.
+          <p className="text-base text-slate-600">
+            Enter the flight, choose what you want to insure, and let the market
+            quote the odds. We will spin up a new market automatically if one
+            does not exist yet.
           </p>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
-          <Card className="shadow-lg">
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+          {insightTiles(
+            premiumQuote.impliedProbability,
+            premiumQuote.premium || 0,
+            markets.length
+          ).map((tile) => (
+            <div
+              key={tile.label}
+              className="flex flex-col items-center rounded-2xl border border-sky-100 bg-white/90 px-4 py-4 text-center shadow-sm shadow-sky-100/60"
+            >
+              <span className="text-xl">{tile.icon}</span>
+              <p className="text-2xl font-semibold text-slate-900">
+                {tile.value}
+              </p>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                {tile.label}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <Card className="shadow-xl ring-1 ring-sky-100/70 bg-white/95">
             <CardHeader>
               <CardTitle>Bet builder</CardTitle>
               <CardDescription>
@@ -318,7 +368,7 @@ export default function BetPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-indigo-600 text-white hover:bg-indigo-700"
+                  className="w-full bg-sky-600 text-white shadow-sm transition hover:bg-sky-500"
                 >
                   Place bet / request cover
                 </Button>
@@ -340,7 +390,7 @@ export default function BetPage() {
           </Card>
 
           <div className="space-y-6">
-            <Card className="shadow-md">
+            <Card className="shadow-xl ring-1 ring-sky-100/70 bg-white/95">
               <CardHeader>
                 <CardTitle>Bet preview</CardTitle>
                 <CardDescription>
@@ -349,7 +399,7 @@ export default function BetPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-xl bg-slate-900 p-5 text-slate-100">
+                <div className="rounded-xl bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 p-5 text-slate-100">
                   <p className="text-xs uppercase tracking-wide text-slate-400">
                     Traveler
                   </p>
@@ -359,26 +409,24 @@ export default function BetPage() {
                   <div className="mt-4 space-y-3 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400">Flight</span>
-                      <span className="font-mono">
-                        {normalizedFlightNumber || "—"}
-                      </span>
+                      <span className="font-mono">{previewFlightNumber}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400">Date</span>
-                      <span>
-                        {formState.departureDate || "Select departure date"}
-                      </span>
+                      <span>{previewDate}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">Route</span>
+                      <span>{previewRoute}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400">Outcome</span>
-                      <span>
-                        {outcomeType === "DELAY" ? "Delay" : "Cancel"}
-                      </span>
+                      <span>{previewOutcomeLabel}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-inner">
                   <div className="flex items-center justify-between text-sm text-slate-600">
                     <span>YES share price</span>
                     <span className="font-semibold text-slate-900">
@@ -407,7 +455,7 @@ export default function BetPage() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-md">
+            <Card className="shadow-lg ring-1 ring-slate-100 bg-white/95">
               <CardHeader>
                 <CardTitle>Why prediction markets?</CardTitle>
                 <CardDescription>
@@ -433,7 +481,10 @@ export default function BetPage() {
           </div>
         </div>
 
-        <Card className="shadow-lg">
+        <Card
+          className="shadow-xl ring-1 ring-slate-100 bg-white/95"
+          id="flight-markets"
+        >
           <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Active flight markets</CardTitle>
@@ -476,7 +527,7 @@ export default function BetPage() {
                 {sortedMarkets.map((market) => (
                   <tr
                     key={market.id}
-                    className="cursor-pointer transition-colors hover:bg-indigo-50/50"
+                    className="cursor-pointer transition-colors hover:bg-sky-50/60"
                     onClick={() =>
                       setFormState((prev) => ({
                         ...prev,
