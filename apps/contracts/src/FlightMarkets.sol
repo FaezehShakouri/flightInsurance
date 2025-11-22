@@ -12,4 +12,18 @@ contract FlightDelayPredictionMarket {
     
     // Market status
     enum MarketStatus { Active, Locked, Resolved }
+
+    struct Flight {
+        string flightNumber;
+        string iataCode; // IATA code of the airport of departure
+        string scheduledTime; // Date of the flight in YYYY-MM-DDThh:mm:ss.sss format compatible with oracle
+        uint256 delayDuration; // Duration of the delay in minutes
+        MarketStatus status; // Active, Locked, Resolved
+        Outcome outcome;
+        uint256 totalOnTimeShares;
+        uint256 totalDelayed30Shares;
+        uint256 totalDelayed60Shares;
+        uint256 totalDelayed90Shares;
+        uint256 totalDelayed120PlusShares;
+    }
 }
