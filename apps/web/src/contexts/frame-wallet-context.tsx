@@ -16,7 +16,7 @@ import { env } from "@/lib/env";
 
 const config = createConfig({
   chains: [celo],
-  connectors: [farcasterMiniApp(), metaMask()],
+  connectors: [farcasterMiniApp()],
   transports: {
     [celo.id]: http(env.NEXT_PUBLIC_RPC_URL || "https://forno.celo.org"),
   },
