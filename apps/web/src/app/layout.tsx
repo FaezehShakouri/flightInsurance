@@ -14,23 +14,23 @@ const frame = {
   version: "1",
   imageUrl: `${appUrl}/opengraph-image.png`,
   button: {
-    title: "Launch farcaster-miniapp",
+    title: "Launch JetLagged",
     action: {
       type: "launch_frame",
-      name: "farcaster-miniapp",
+      name: "JetLagged",
       url: appUrl,
       splashImageUrl: `${appUrl}/icon.png`,
-      splashBackgroundColor: "#ffffff",
+      splashBackgroundColor: "#3b82f6",
     },
   },
 };
 
 export const metadata: Metadata = {
-  title: 'farcaster-miniapp',
-  description: 'A new Celo blockchain project',
+  title: 'JetLagged - Flight Delay Prediction Markets',
+  description: 'Bet on flight delays and cancellations. Turn your travel anxiety into profit!',
   openGraph: {
-    title: 'farcaster-miniapp',
-    description: 'A new Celo blockchain project',
+    title: 'JetLagged - Flight Delay Prediction Markets',
+    description: 'Bet on flight delays and cancellations. Turn your travel anxiety into profit!',
     images: [`${appUrl}/opengraph-image.png`],
   },
   other: {

@@ -3,6 +3,7 @@ import { useMiniApp } from "@/contexts/miniapp-context";
 import { sdk } from "@farcaster/frame-sdk";
 import { useState, useEffect } from "react";
 import { useAccount, useConnect } from "wagmi";
+import Link from "next/link";
 
 export default function Home() {
   const { context, isMiniAppReady } = useMiniApp();
@@ -32,26 +33,16 @@ export default function Home() {
 
   // Extract user data from context
   const user = context?.user;
-  // Use connected wallet address if available, otherwise fall back to user custody/verification
-  const walletAddress =
-    address || user?.custody || user?.verifications?.[0] || "0x1e4B...605B";
-  const displayName = user?.displayName || user?.username || "User";
-  const username = user?.username || "@user";
+  const displayName = user?.displayName || user?.username || "Traveler";
   const pfpUrl = user?.pfpUrl;
-
-  // Format wallet address to show first 6 and last 4 characters
-  const formatAddress = (address: string) => {
-    if (!address || address.length < 10) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
 
   if (!isMiniAppReady) {
     return (
       <main className="flex-1">
-        <section className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <section className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
           <div className="w-full max-w-md mx-auto p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+            <p className="text-gray-300">Loading JetLagged...</p>
           </div>
         </section>
       </main>
@@ -59,83 +50,57 @@ export default function Home() {
   }
 
   return (
-    <main className="flex-1">
-      <section className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="w-full max-w-md mx-auto p-8 text-center">
-          {/* Welcome Header */}
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome</h1>
-
-          {/* Status Message */}
-          <p className="text-lg text-gray-600 mb-6">You are signed in!</p>
-
-          {/* User Wallet Address */}
-          <div className="mb-8">
-            <div className="bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-600 font-medium">
-                  Wallet Status
-                </span>
-                <div
-                  className={`flex items-center gap-1 text-xs ${
-                    isConnected
-                      ? "text-green-600"
-                      : isConnecting
-                      ? "text-yellow-600"
-                      : "text-gray-500"
-                  }`}
-                >
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      isConnected
-                        ? "bg-green-500"
-                        : isConnecting
-                        ? "bg-yellow-500"
-                        : "bg-gray-400"
-                    }`}
-                  ></div>
-                  {isConnected
-                    ? "Connected"
-                    : isConnecting
-                    ? "Connecting..."
-                    : "Disconnected"}
-                </div>
-              </div>
-              <p className="text-sm text-gray-700 font-mono">
-                {formatAddress(walletAddress)}
-              </p>
-            </div>
+    <main className="flex-1 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <section className="flex items-center justify-center min-h-screen py-12 px-4">
+        <div className="w-full max-w-2xl mx-auto text-center space-y-8">
+          {/* Hero Section */}
+          <div className="space-y-4">
+            <div className="text-6xl mb-4">✈️</div>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+              Welcome to JetLagged
+            </h1>
+            <p className="text-xl text-gray-300 max-w-xl mx-auto">
+              Turn your travel anxiety into profit. Bet on flight delays and
+              cancellations.
+            </p>
           </div>
 
-          {/* User Profile Section */}
-          <div className="mb-8">
-            {/* Profile Avatar */}
-            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center overflow-hidden">
-              {pfpUrl ? (
-                <img
-                  src={pfpUrl}
-                  alt="Profile"
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center">
-                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+          {/* User Card */}
+          {user && (
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-slate-700">
+              <div className="flex items-center gap-4 justify-center mb-4">
+                {pfpUrl && (
+                  <img
+                    src={pfpUrl}
+                    alt="Profile"
+                    className="w-16 h-16 rounded-full border-2 border-blue-400"
+                  />
+                )}
+                <div className="text-left">
+                  <p className="text-sm text-gray-400">Signed in as</p>
+                  <p className="text-lg font-semibold text-white">
+                    {displayName}
+                  </p>
+                </div>
+              </div>
+
+              {isConnected && (
+                <div className="flex items-center justify-center gap-2 text-sm text-green-400">
+                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                  Wallet Connected
                 </div>
               )}
             </div>
+          )}
 
-            {/* Profile Info */}
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-1">
-                {displayName}
-              </h2>
-              <p className="text-gray-500">
-                {username.startsWith("@") ? username : `@${username}`}
-              </p>
-            </div>
-          </div>
-
-          {/* Add Miniapp Button */}
-          <div className="mb-6">
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/markets"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40"
+            >
+              View Flight Markets
+            </Link>
             <button
               onClick={async () => {
                 if (isAddingMiniApp) return;
@@ -145,54 +110,55 @@ export default function Home() {
 
                 try {
                   await sdk.actions.addMiniApp();
-                  setAddMiniAppMessage("✅ Miniapp added successfully!");
+                  setAddMiniAppMessage("✅ Added to your miniapps!");
                 } catch (error: any) {
                   console.error("Add miniapp error:", error);
                   const name = error?.name || "";
-                  const message = error?.message || "";
                   if (name === "RejectedByUser") {
-                    setAddMiniAppMessage(
-                      "ℹ️ Miniapp was not added (user declined or already exists)"
-                    );
-                  } else if (
-                    name === "InvalidDomainManifest" ||
-                    message.includes("invalid_domain_manifest") ||
-                    message.includes("domain")
-                  ) {
-                    setAddMiniAppMessage(
-                      "⚠️ This miniapp can only be added from its official domain"
-                    );
+                    setAddMiniAppMessage("Already added or declined");
                   } else {
-                    setAddMiniAppMessage(
-                      "❌ Failed to add miniapp. Please try again."
-                    );
+                    setAddMiniAppMessage("Could not add miniapp");
                   }
                 } finally {
                   setIsAddingMiniApp(false);
                 }
               }}
               disabled={isAddingMiniApp}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+              className="bg-slate-800 hover:bg-slate-700 text-blue-400 font-semibold py-4 px-8 rounded-xl transition-colors duration-200 border-2 border-slate-700 hover:border-blue-400/50"
             >
-              {isAddingMiniApp ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <span>📱</span>
-                  Add Miniapp
-                </>
-              )}
+              {isAddingMiniApp ? "Adding..." : "📱 Add to Farcaster"}
             </button>
+          </div>
 
-            {/* Add Miniapp Status Message */}
-            {addMiniAppMessage && (
-              <div className="mt-3 p-3 bg-white/30 backdrop-blur-sm rounded-lg">
-                <p className="text-sm text-gray-700">{addMiniAppMessage}</p>
-              </div>
-            )}
+          {addMiniAppMessage && (
+            <div className="bg-slate-800/80 backdrop-blur-sm rounded-lg p-4 border border-slate-700">
+              <p className="text-sm text-gray-300">{addMiniAppMessage}</p>
+            </div>
+          )}
+
+          {/* Features */}
+          <div className="grid sm:grid-cols-3 gap-6 mt-12">
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+              <div className="text-3xl mb-3">📊</div>
+              <h3 className="font-semibold text-white mb-2">Live Markets</h3>
+              <p className="text-sm text-gray-400">
+                Bet on real flights with live odds
+              </p>
+            </div>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+              <div className="text-3xl mb-3">⏱️</div>
+              <h3 className="font-semibold text-white mb-2">Real-Time</h3>
+              <p className="text-sm text-gray-400">
+                Prices update based on market demand
+              </p>
+            </div>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+              <div className="text-3xl mb-3">💰</div>
+              <h3 className="font-semibold text-white mb-2">Win Big</h3>
+              <p className="text-sm text-gray-400">
+                Predict correctly and earn rewards
+              </p>
+            </div>
           </div>
         </div>
       </section>

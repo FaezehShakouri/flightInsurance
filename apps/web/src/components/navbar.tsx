@@ -10,29 +10,37 @@ import { WalletConnectButton } from "@/components/connect-button";
 
 const navLinks = [
   { name: "Home", href: "/" },
-  { name: "Place Bet", href: "/bet" },
   { name: "Markets", href: "/markets" },
-  { name: "Docs", href: "https://docs.celo.org", external: true },
 ];
 
 export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-blue-500/20 bg-slate-900/80 backdrop-blur-md supports-[backdrop-filter]:bg-slate-900/60">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-4">
         <div className="flex items-center gap-2">
           {/* Mobile menu button */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden text-white hover:bg-slate-800"
+              >
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80">
+            <SheetContent
+              side="left"
+              className="w-80 bg-slate-900 border-slate-800"
+            >
               <div className="flex items-center gap-2 mb-8">
-                <span className="font-bold text-lg">farcaster-miniapp</span>
+                <span className="text-2xl">✈️</span>
+                <span className="font-bold text-lg text-blue-400">
+                  JetLagged
+                </span>
               </div>
               <nav className="flex flex-col gap-4">
                 {navLinks.map((link) => (
@@ -41,17 +49,15 @@ export function Navbar() {
                     href={link.href}
                     target={link.external ? "_blank" : undefined}
                     rel={link.external ? "noopener noreferrer" : undefined}
-                    className={`flex items-center gap-2 text-base font-medium transition-colors hover:text-primary ${
-                      pathname === link.href
-                        ? "text-foreground"
-                        : "text-foreground/70"
+                    className={`flex items-center gap-2 text-base font-medium transition-colors hover:text-blue-400 ${
+                      pathname === link.href ? "text-blue-400" : "text-gray-300"
                     }`}
                   >
                     {link.name}
                     {link.external && <ExternalLink className="h-4 w-4" />}
                   </Link>
                 ))}
-                <div className="mt-6 pt-6 border-t">
+                <div className="mt-6 pt-6 border-t border-slate-800">
                   <WalletConnectButton />
                 </div>
               </nav>
@@ -61,10 +67,11 @@ export function Navbar() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <span className="hidden font-bold text-xl sm:inline-block">
-              farcaster-miniapp
+            <span className="text-2xl">✈️</span>
+            <span className="font-bold text-xl bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              JetLagged
             </span>
           </Link>
         </div>
@@ -77,10 +84,8 @@ export function Navbar() {
               href={link.href}
               target={link.external ? "_blank" : undefined}
               rel={link.external ? "noopener noreferrer" : undefined}
-              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary ${
-                pathname === link.href
-                  ? "text-foreground"
-                  : "text-foreground/70"
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-400 ${
+                pathname === link.href ? "text-blue-400" : "text-gray-300"
               }`}
             >
               {link.name}

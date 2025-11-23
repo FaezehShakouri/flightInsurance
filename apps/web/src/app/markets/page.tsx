@@ -239,19 +239,15 @@ export default function MarketsPage() {
   ];
 
   return (
-    <section className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 py-12 text-white">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4">
-        <header className="text-center space-y-3">
-          <p className="text-xs uppercase tracking-[0.4em] text-sky-300">
-            SkyShield | coverage pools
-          </p>
-          <h1 className="text-4xl font-semibold text-white sm:text-5xl">
-            Active flight prediction markets
+    <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-12 min-h-screen">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4">
+        <header className="text-center space-y-4">
+          <div className="text-5xl mb-2">✈️</div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+            Flight Markets
           </h1>
-          <p className="text-base text-slate-200">
-            Monitor every delay and cancellation pool that the AMM currently
-            underwrites. Filter by trigger or search by flight, route, or
-            airline to find the market you need.
+          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+            Bet on flight delays and cancellations. Pick a flight and start trading!
           </p>
           <div className="flex justify-center pt-4">
             <CreateFlightMarketDialog onSuccess={handleMarketCreated} />
@@ -260,7 +256,8 @@ export default function MarketsPage() {
 
         {isLoading && (
           <div className="text-center py-12">
-            <p className="text-slate-300 text-lg">Loading flight markets...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+            <p className="text-gray-300 text-lg">Loading markets...</p>
           </div>
         )}
 
@@ -272,29 +269,29 @@ export default function MarketsPage() {
 
         {!isLoading && !error && (
           <>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {kpiTiles.map((tile, index) => (
                 <div
                   key={tile.label}
-                  className="rounded-2xl border border-white/5 bg-white/5 px-4 py-5 text-center shadow-lg shadow-black/40"
+                  className="rounded-xl bg-slate-800/50 backdrop-blur-sm border border-slate-700 px-4 py-5 text-center shadow-lg"
                 >
-                  <span className="text-lg">{tile.icon}</span>
-                  <p className="mt-2 text-3xl font-semibold">
+                  <span className="text-2xl">{tile.icon}</span>
+                  <p className="mt-2 text-2xl font-bold text-white">
                     {kpiValues[index] || "--"}
                   </p>
-                  <p className="text-xs uppercase tracking-wide text-slate-300">
+                  <p className="text-xs font-medium text-gray-300 mt-1">
                     {tile.label}
                   </p>
-                  <p className="text-xs text-slate-400">{tile.detail}</p>
+                  <p className="text-xs text-gray-400">{tile.detail}</p>
                 </div>
               ))}
             </div>
 
-            <Card className="border-white/10 bg-white/5 text-white shadow-2xl shadow-black/30">
+            <Card className="border-slate-700 bg-slate-800/50 backdrop-blur-sm shadow-xl text-white">
               <CardHeader>
-                <CardTitle>Filter pools</CardTitle>
-                <CardDescription className="text-slate-300">
-                  Narrow the runway by trigger type or search specific flights.
+                <CardTitle className="text-white">Search Flights</CardTitle>
+                <CardDescription className="text-gray-300">
+                  Filter by outcome type or search for specific flights
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -304,10 +301,10 @@ export default function MarketsPage() {
                       <button
                         key={filter.value}
                         onClick={() => setSelectedOutcome(filter.value)}
-                        className={`rounded-full border px-4 py-2 text-sm transition ${
+                        className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                           selectedOutcome === filter.value
-                            ? "border-sky-300 bg-sky-500/20 text-white"
-                            : "border-white/20 text-slate-200 hover:border-sky-200/60 hover:text-white"
+                            ? "border-blue-400 bg-blue-500 text-white shadow-lg shadow-blue-500/20"
+                            : "border-slate-600 text-gray-300 hover:border-blue-400/50 hover:bg-slate-700"
                         }`}
                       >
                         {filter.label}
@@ -320,7 +317,7 @@ export default function MarketsPage() {
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
                       placeholder="Search flight, route, or airline"
-                      className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/50"
+                      className="w-full rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-2 text-sm text-white placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                     />
                   </div>
                 </div>
@@ -329,35 +326,35 @@ export default function MarketsPage() {
 
             {filteredMarkets.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-slate-300 text-lg">No markets found. Try adjusting your filters.</p>
+                <p className="text-gray-300 text-lg">No markets found. Try adjusting your filters.</p>
               </div>
             ) : (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredMarkets.map((market) => (
                   <Card
                     key={market.id}
-                    className="flex h-full flex-col border-white/10 bg-white/5 text-white shadow-xl shadow-black/40"
+                    className="flex h-full flex-col border-slate-700 bg-slate-800/50 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-slate-600 transition-all text-white"
                   >
                     <CardHeader className="flex flex-col gap-4">
-                      <div className="flex items-center justify-between text-sm text-slate-300">
-                        <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-wide">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 text-xs font-semibold uppercase">
                           {market.airline}
                         </span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-gray-400">
                           {market.departureDate}
                         </span>
                       </div>
                       <div>
-                        <p className="text-3xl font-semibold">
+                        <p className="text-3xl font-bold text-white">
                           {market.flightNumber}
                         </p>
-                        <p className="text-sm text-slate-300">{market.route}</p>
+                        <p className="text-sm text-gray-300">{market.route}</p>
                       </div>
-                      <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
-                        <p className="text-xs uppercase tracking-wide text-slate-400">
+                      <div className="rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-2 text-sm">
+                        <p className="text-xs font-medium text-gray-400">
                           {market.totalLiquidity === 0 ? "Status" : "Liquidity"}
                         </p>
-                        <p className="text-base text-white">
+                        <p className="text-base font-semibold text-white">
                           {market.totalLiquidity === 0 
                             ? "📊 New Market" 
                             : currency.format(market.totalLiquidity)}
@@ -365,10 +362,10 @@ export default function MarketsPage() {
                       </div>
                       {market.outcome > 0 && (
                         <div className="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm">
-                          <p className="text-xs uppercase tracking-wide text-green-300">
+                          <p className="text-xs font-medium text-green-300">
                             Resolved
                           </p>
-                          <p className="text-base text-green-200">
+                          <p className="text-base font-semibold text-green-200">
                             {market.outcome === 1 && "On Time"}
                             {market.outcome === 2 && "Delayed 30+"}
                             {market.outcome === 3 && "Delayed 120+"}
@@ -418,14 +415,14 @@ function OutcomeRow({
   const totalShares = outcome.yesShares + outcome.noShares;
   
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-slate-300 sm:text-sm">
+    <div className="rounded-lg border border-slate-600 bg-slate-700/30 p-3 text-xs sm:text-sm">
       <div className="flex items-center justify-between gap-2">
         <span className="font-semibold text-white">{outcomeLabels[outcome.type]}</span>
         {hasAnyShares ? (
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <div className="text-xs text-emerald-300">YES {percent.format(outcome.yesPrice)}</div>
-              <div className="text-xs text-red-300">NO {percent.format(outcome.noPrice)}</div>
+              <div className="text-xs text-emerald-400 font-medium">YES {percent.format(outcome.yesPrice)}</div>
+              <div className="text-xs text-red-400 font-medium">NO {percent.format(outcome.noPrice)}</div>
             </div>
             <BuySellSharesDialog
               flightId={flightId}
@@ -439,7 +436,7 @@ function OutcomeRow({
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">No shares yet</span>
+            <span className="text-xs text-gray-400">No shares yet</span>
             <BuySellSharesDialog
               flightId={flightId}
               flightNumber={flightNumber}
@@ -452,7 +449,7 @@ function OutcomeRow({
           </div>
         )}
       </div>
-      <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 sm:text-xs">
+      <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400 sm:text-xs">
         <span>
           {hasAnyShares ? (
             <>
