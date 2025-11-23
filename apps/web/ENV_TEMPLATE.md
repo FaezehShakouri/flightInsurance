@@ -20,7 +20,24 @@ NEXT_PUBLIC_FARCASTER_SIGNATURE=
 # RPC URL for Celo network
 NEXT_PUBLIC_RPC_URL=https://forno.celo.org
 
-# Backend API URL (your oasis backend URL)
-NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
+# ⚠️ CRITICAL: Backend API URL (your oasis backend URL)
+# Set this AFTER backend is deployed!
+# Example: https://flight-insurance-backend.onrender.com
+NEXT_PUBLIC_OASIS_API_URL=https://your-backend.onrender.com
 ```
+
+## Important Notes
+
+### Backend URL Configuration
+
+The `NEXT_PUBLIC_OASIS_API_URL` is **critical** for the frontend to communicate with the backend.
+
+**Two-Step Deployment Process:**
+
+1. **Deploy Backend First** - Wait for backend to deploy and get its URL
+2. **Set Backend URL** - Copy the backend URL (e.g., `https://flight-insurance-backend.onrender.com`)
+3. **Update Frontend** - Set `NEXT_PUBLIC_OASIS_API_URL` to the backend URL
+4. **Redeploy Frontend** - Trigger a manual redeploy to pick up the new environment variable
+
+Without this, the frontend **cannot resolve flight markets** or make API calls to the backend!
 

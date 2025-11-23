@@ -23,6 +23,8 @@ services:
     healthCheckPath: /health
 
   # Frontend Service (Next.js)
+  # IMPORTANT: After backend deploys, copy its URL and set NEXT_PUBLIC_OASIS_API_URL
+  # Then trigger a manual redeploy of frontend
   - type: web
     name: flight-insurance-frontend
     env: node
@@ -44,4 +46,8 @@ services:
       - key: NEXT_PUBLIC_FARCASTER_PAYLOAD
         sync: false
       - key: NEXT_PUBLIC_FARCASTER_SIGNATURE
+        sync: false
+      # ⚠️ CRITICAL: Set this to your backend URL after backend deploys
+      # Example: https://flight-insurance-backend.onrender.com
+      - key: NEXT_PUBLIC_OASIS_API_URL
         sync: false

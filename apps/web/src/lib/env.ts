@@ -36,6 +36,11 @@ export const env = createEnv({
       .url()
       .optional()
       .default("https://sepolia.infura.io/v3/"),
+    NEXT_PUBLIC_OASIS_API_URL: z
+      .string()
+      .url()
+      .optional()
+      .default("http://localhost:4500"),
   },
   // For Next.js >= 13.4.4, you only need to destructure client variables:
   experimental__runtimeEnv: {
@@ -46,5 +51,6 @@ export const env = createEnv({
     NEXT_PUBLIC_FARCASTER_SIGNATURE:
       process.env.NEXT_PUBLIC_FARCASTER_SIGNATURE,
     NEXT_PUBLIC_RPC_URL: process.env.NEXT_PUBLIC_RPC_URL,
+    NEXT_PUBLIC_OASIS_API_URL: process.env.NEXT_PUBLIC_OASIS_API_URL,
   },
 });

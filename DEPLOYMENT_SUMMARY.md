@@ -44,9 +44,18 @@ Your Flight Insurance fullstack application is now ready to deploy to Render!
 
 3. **Set Environment Variables**:
    - Backend: `PRIVATE_KEY`, `AVIATION_EDGE_API_KEY`
-   - Frontend: `JWT_SECRET`, `NEXT_PUBLIC_URL`, `NEXT_PUBLIC_BACKEND_URL`
+   - Frontend: `JWT_SECRET`, `NEXT_PUBLIC_URL`
 
 4. **Click "Apply"** and wait 5-10 minutes for deployment!
+
+5. **⚠️ CRITICAL POST-DEPLOYMENT STEP**:
+   After backend deploys:
+   - Copy backend URL (e.g., `https://flight-insurance-backend.onrender.com`)
+   - Go to frontend service → Environment tab
+   - Set `NEXT_PUBLIC_OASIS_API_URL` to the backend URL
+   - Save changes and manually redeploy frontend
+   
+   **This step is REQUIRED for market resolution to work!**
 
 ### Method 2: Use Helper Script
 
@@ -73,8 +82,9 @@ CONTRACT_ADDRESS_CELO=0x243E...      # Already set in render.yaml
 ```bash
 JWT_SECRET=random_secret_here
 NEXT_PUBLIC_URL=https://your-app.onrender.com
-NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
-NEXT_PUBLIC_RPC_URL=https://forno.celo.org  # Already set
+
+# ⚠️ CRITICAL: Set AFTER backend deploys!
+NEXT_PUBLIC_OASIS_API_URL=https://your-backend.onrender.com
 ```
 
 ### Optional (for Farcaster Frame)

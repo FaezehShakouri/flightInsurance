@@ -123,8 +123,10 @@ git push origin main
 
 - [ ] Backend health check: `https://your-backend.onrender.com/health`
 - [ ] Frontend loads: `https://your-frontend.onrender.com`
-- [ ] Update frontend `NEXT_PUBLIC_BACKEND_URL` with backend URL
-- [ ] Trigger frontend redeploy after backend URL is set
+- [ ] **CRITICAL**: Copy backend URL from Render dashboard
+- [ ] **CRITICAL**: Set `NEXT_PUBLIC_OASIS_API_URL` in frontend environment to backend URL
+- [ ] **CRITICAL**: Trigger frontend redeploy to pick up new environment variable
+- [ ] Verify frontend can communicate with backend (check browser console)
 
 ### 6. Smoke Testing
 

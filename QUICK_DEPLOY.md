@@ -33,11 +33,22 @@ AVIATION_EDGE_API_KEY=...
 ```
 JWT_SECRET=random_secret_string
 NEXT_PUBLIC_URL=https://your-frontend.onrender.com
-NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com
 ```
 
 ### 4️⃣ Deploy!
 Click **"Apply"** and wait 5-10 minutes
+
+### 5️⃣ ⚠️ CRITICAL: Update Frontend with Backend URL
+
+**After backend deploys:**
+
+1. Copy backend URL: `https://flight-insurance-backend.onrender.com`
+2. Go to frontend service → Environment tab
+3. Set `NEXT_PUBLIC_OASIS_API_URL` to backend URL
+4. Click "Save Changes"
+5. Manual Deploy → "Deploy latest commit"
+
+**This step is REQUIRED for market resolution to work!**
 
 ---
 

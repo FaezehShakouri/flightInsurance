@@ -42,7 +42,9 @@ NEXT_PUBLIC_RPC_URL=https://forno.celo.org
 NEXT_PUBLIC_FARCASTER_HEADER=...                   # Optional: Farcaster Frame config
 NEXT_PUBLIC_FARCASTER_PAYLOAD=...
 NEXT_PUBLIC_FARCASTER_SIGNATURE=...
-NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com  # Your backend URL
+
+# ⚠️ CRITICAL: Set this AFTER backend deploys
+NEXT_PUBLIC_OASIS_API_URL=https://your-backend.onrender.com
 ```
 
 ## Deployment Options
@@ -113,17 +115,31 @@ NEXT_PUBLIC_BACKEND_URL=https://your-backend.onrender.com  # Your backend URL
 
 4. **Deploy**: Click "Create Web Service"
 
-## Post-Deployment
+## ⚠️ Post-Deployment (CRITICAL STEP)
 
-### 1. Update Frontend Environment
+### 1. Update Frontend with Backend URL
 
-After backend is deployed, update the frontend's `NEXT_PUBLIC_BACKEND_URL`:
+**This step is REQUIRED for the app to work!**
 
-```bash
-NEXT_PUBLIC_BACKEND_URL=https://flight-insurance-backend.onrender.com
-```
+After backend is deployed:
 
-Then redeploy the frontend.
+1. **Get Backend URL**:
+   - Go to Render Dashboard
+   - Click on `flight-insurance-backend` service
+   - Copy the URL (e.g., `https://flight-insurance-backend.onrender.com`)
+
+2. **Update Frontend Environment Variable**:
+   - Click on `flight-insurance-frontend` service
+   - Go to "Environment" tab
+   - Find `NEXT_PUBLIC_OASIS_API_URL`
+   - Set it to your backend URL: `https://flight-insurance-backend.onrender.com`
+   - Click "Save Changes"
+
+3. **Trigger Frontend Redeploy**:
+   - Click "Manual Deploy" → "Deploy latest commit"
+   - Wait for rebuild (5-7 minutes)
+
+**Without this step, market resolution will NOT work!**
 
 ### 2. Update CORS (if needed)
 
