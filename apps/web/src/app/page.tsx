@@ -112,7 +112,7 @@ export default function Home() {
                 setAddMiniAppMessage(null);
 
                 try {
-                  await sdk.actions.addMiniApp();
+                  await sdk.actions.addFrame();
                   setAddMiniAppMessage("✅ Added to your miniapps!");
                 } catch (error: any) {
                   console.error("Add miniapp error:", error);
@@ -120,7 +120,7 @@ export default function Home() {
                   if (name === "RejectedByUser") {
                     setAddMiniAppMessage("Already added or declined");
                   } else {
-                    setAddMiniAppMessage("Could not add miniapp");
+                    setAddMiniAppMessage(`Could not add miniapp: ${error?.message || 'Unknown error'}`);
                   }
                 } finally {
                   setIsAddingMiniApp(false);
