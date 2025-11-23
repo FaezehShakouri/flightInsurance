@@ -27,7 +27,7 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
     scheduledTime: "",
   });
 
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -68,6 +68,8 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
       airlineCode: "",
       scheduledTime: "",
     });
+    // Reset the transaction state
+    reset();
     if (isSuccess && onSuccess) {
       onSuccess();
     }

@@ -49,10 +49,17 @@ const currency = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+const price = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
+
 const percent = new Intl.NumberFormat("en-US", {
   style: "percent",
   minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 const kpiTiles = [
@@ -93,6 +100,14 @@ export default function MarketsPage() {
     if (!flightsData || !Array.isArray(flightsData)) return [];
 
     return (flightsData as any[]).map((flight) => {
+      // Debug: Log the raw probability values
+      console.log('Raw probability values:', {
+        onTime: flight.onTimeProbability?.toString(),
+        cancelled: flight.cancelledProbability?.toString(),
+        delayed30: flight.delayed30Probability?.toString(),
+        delayed120: flight.delayed120PlusProbability?.toString(),
+      });
+
       const totalOnTimeShares = BigInt(flight.totalOnTimeShares || 0);
       const totalCancelledShares = BigInt(flight.totalCancelledShares || 0);
       const totalDelayed30Shares = BigInt(flight.totalDelayed30Shares || 0);
@@ -101,11 +116,20 @@ export default function MarketsPage() {
       const totalShares = totalOnTimeShares + totalCancelledShares + totalDelayed30Shares + totalDelayed120PlusShares;
       const totalLiquidityValue = Number(formatUnits(totalShares, 18));
 
-      // Parse the probabilities (they come as percentages with 2 decimal places, e.g., 2500 = 25.00%)
-      const onTimeProbability = Number(flight.onTimeProbability || 0) / 100;
-      const cancelledProbability = Number(flight.cancelledProbability || 0) / 100;
-      const delayed30Probability = Number(flight.delayed30Probability || 0) / 100;
-      const delayed120PlusProbability = Number(flight.delayed120PlusProbability || 0) / 100;
+      // Parse the probabilities - they are stored with 18 decimals
+      // Example: 250000000000000000 = 0.25 (25%) when divided by 10^18
+      // Then multiply by 100 to convert to percentage display
+      const onTimeProbability = Number(formatUnits(BigInt(flight.onTimeProbability || 0), 18)) * 100;
+      const cancelledProbability = Number(formatUnits(BigInt(flight.cancelledProbability || 0), 18)) * 100;
+      const delayed30Probability = Number(formatUnits(BigInt(flight.delayed30Probability || 0), 18)) * 100;
+      const delayed120PlusProbability = Number(formatUnits(BigInt(flight.delayed120PlusProbability || 0), 18)) * 100;
+
+      console.log('Parsed probabilities:', {
+        onTime: onTimeProbability,
+        cancelled: cancelledProbability,
+        delayed30: delayed30Probability,
+        delayed120: delayed120PlusProbability,
+      });
 
       const outcomes: MarketOutcome[] = [
         {
@@ -141,7 +165,7 @@ export default function MarketsPage() {
         route: `${flight.departureCode} → ${flight.destinationCode}`,
         totalLiquidity: totalLiquidityValue,
         airline: flight.airlineCode,
-        outcomes: outcomes.filter(o => o.totalShares > 0n), // Only show outcomes with shares
+        outcomes: outcomes, // Show all outcomes with their probabilities
         outcome: Number(flight.outcome || 0),
       };
     });
@@ -319,10 +343,12 @@ export default function MarketsPage() {
                       </div>
                       <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">
                         <p className="text-xs uppercase tracking-wide text-slate-400">
-                          Liquidity
+                          {market.totalLiquidity === 0 ? "Status" : "Liquidity"}
                         </p>
                         <p className="text-base text-white">
-                          {currency.format(market.totalLiquidity)}
+                          {market.totalLiquidity === 0 
+                            ? "📊 New Market" 
+                            : currency.format(market.totalLiquidity)}
                         </p>
                       </div>
                       {market.outcome > 0 && (
@@ -362,12 +388,14 @@ export default function MarketsPage() {
 
 function OutcomeRow({ outcome }: { outcome: MarketOutcome }) {
   const [yesNo, setYesNo] = useState(true);
+  const hasShares = outcome.totalShares > 0n;
+  
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-slate-300 sm:text-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 text-white">
         <span className="font-semibold">{outcomeLabels[outcome.type]}</span>
         <div className="flex items-center gap-2">
-          <span className="text-sky-200 text-sm">
+          <span className="text-sky-200 text-sm font-semibold">
             {percent.format(outcome.impliedProbability / 100)}
           </span>
           <div className="flex gap-1">
@@ -398,8 +426,12 @@ function OutcomeRow({ outcome }: { outcome: MarketOutcome }) {
         </div>
       </div>
       <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 sm:text-xs">
-        <span>YES {currency.format(outcome.yesPrice)}</span>
-        <span>Shares {formatUnits(outcome.totalShares, 18).substring(0, 8)}</span>
+        <span>Price {price.format(outcome.yesPrice)}</span>
+        <span>
+          {hasShares 
+            ? `${formatUnits(outcome.totalShares, 18).substring(0, 8)} shares` 
+            : "No positions yet"}
+        </span>
       </div>
     </div>
   );
