@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { Connector, useAccount, useConnect, useDisconnect } from "wagmi";
 
 export function WalletConnectButton() {
   const [mounted, setMounted] = useState(false);
@@ -29,7 +29,13 @@ export function WalletConnectButton() {
     const metaMaskConnector = connectors.find(
       (connector) => connector.id === "metaMaskSDK"
     );
-    const selectedConnector = frameConnector || metaMaskConnector;
+
+    let selectedConnector: Connector | undefined;
+    if (frameConnector) {
+      selectedConnector = frameConnector;
+    } else if (metaMaskConnector) {
+      selectedConnector = metaMaskConnector;
+    }
 
     return (
       <button

@@ -52,7 +52,7 @@ export async function getFarcasterManifest() {
       splashBackgroundColor: "#FFFFFF",
       webhookUrl: `${appUrl}/api/webhook`,
       // Metadata https://github.com/farcasterxyz/miniapps/discussions/191
-      subtitle: "Flight delay prediction markets", // 30 characters, no emojis or special characters, short description under app name
+      subtitle: "Bet on flight delays", // 20 characters, no emojis or special characters, short description under app name
       description: "Turn your travel anxiety into profit. Bet on flight delays and cancellations with JetLagged - a decentralized prediction market on Celo.", // 170 characters, no emojis or special characters, promotional message displayed on Mini App Page
       primaryCategory: "social",
       tags: ["finance", "celo", "prediction", "travel", "defi"], // up to 5 tags, filtering/search tags
