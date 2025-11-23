@@ -1,3 +1,77 @@
+import { createWalletClient, createPublicClient, http, parseAbi } from "viem";
+import { sepolia, celo } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
+
+// Bun automatically loads .env file from the current directory
+// Access environment variables directly from process.env
+
+const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
+const CELO_RPC_URL = process.env.CELO_RPC_URL || "https://forno.celo.org";
+const PRIVATE_KEY = process.env.PRIVATE_KEY as `0x${string}` | undefined;
+const CONTRACT_ADDRESS_SEPOLIA = process.env.CONTRACT_ADDRESS_SEPOLIA as
+  | `0x${string}`
+  | undefined;
+const CONTRACT_ADDRESS_CELO = process.env.CONTRACT_ADDRESS_CELO as
+  | `0x${string}`
+  | undefined;
+const AVIATION_EDGE_API_KEY =
+  process.env.AVIATION_EDGE_API_KEY || "2be650-5dfb75";
+
+// Log configuration status on startup
+console.log("🔧 Environment Configuration:");
+console.log(`  Sepolia RPC: ${SEPOLIA_RPC_URL ? "✅ Set" : "❌ Missing"}`);
+console.log(`  Celo RPC: ${CELO_RPC_URL ? "✅ Set" : "❌ Missing"}`);
+console.log(`  Private Key: ${PRIVATE_KEY ? "✅ Set" : "❌ Missing"}`);
+console.log(`  Sepolia Contract: ${CONTRACT_ADDRESS_SEPOLIA || "❌ Not set"}`);
+console.log(`  Celo Contract: ${CONTRACT_ADDRESS_CELO || "❌ Not set"}`);
+console.log(
+  `  Aviation API: ${AVIATION_EDGE_API_KEY ? "✅ Set" : "❌ Missing"}`
+);
+console.log("");
+
+// ABI for resolveMarket function
+const contractAbi = parseAbi([
+  "function resolveMarket(bytes32 flightId, uint8 outcome) external",
+]);
+
+// Setup account from private key
+const account = PRIVATE_KEY ? privateKeyToAccount(PRIVATE_KEY) : null;
+
+// Setup clients for both chains
+const sepoliaClient = account
+  ? createWalletClient({
+      account,
+      chain: sepolia,
+      transport: http(SEPOLIA_RPC_URL),
+    })
+  : null;
+
+const celoClient = account
+  ? createWalletClient({
+      account,
+      chain: celo,
+      transport: http(CELO_RPC_URL),
+    })
+  : null;
+
+// Helper to get contract address and client based on chain
+function getChainConfig(chain: string) {
+  if (chain === "S" || chain === "sepolia") {
+    return {
+      client: sepoliaClient,
+      contractAddress: CONTRACT_ADDRESS_SEPOLIA,
+      chainName: "Sepolia",
+    };
+  } else if (chain === "C" || chain === "celo") {
+    return {
+      client: celoClient,
+      contractAddress: CONTRACT_ADDRESS_CELO,
+      chainName: "Celo",
+    };
+  }
+  return null;
+}
+
 const server = Bun.serve({
   port: 4500,
   async fetch(req) {
@@ -25,6 +99,7 @@ const server = Bun.serve({
         const dateTime = url.searchParams.get("date"); // Format: YYYY-MM-DDTHH:MM or YYYY-MM-DD HH:MM
         const airlineCode = url.searchParams.get("airlineCode");
         const flightNumber = url.searchParams.get("flightNumber");
+        const chain = url.searchParams.get("chain") || "S"; // S for Sepolia, C for Celo
 
         // Validate required parameters
         if (
@@ -56,8 +131,7 @@ const server = Bun.serve({
         const scheduledDateTime = new Date(dateTime.replace(" ", "T"));
 
         // Make API call to Aviation Edge
-        const apiKey = "2be650-5dfb75";
-        const aviationEdgeUrl = `https://aviation-edge.com/v2/public/flightsHistory?key=${apiKey}&code=${departureCode}&type=departure&date_from=${date}&airline_iata=${airlineCode}&flight_num=${flightNumber}`;
+        const aviationEdgeUrl = `https://aviation-edge.com/v2/public/flightsHistory?key=${AVIATION_EDGE_API_KEY}&code=${departureCode}&type=departure&date_from=${date}&airline_iata=${airlineCode}&flight_num=${flightNumber}`;
 
         console.log(`Fetching flight data: ${aviationEdgeUrl}`);
 
@@ -135,12 +209,54 @@ const server = Bun.serve({
           );
         }
 
+        // Submit to blockchain
+        const chainConfig = getChainConfig(chain);
+        let txHash = null;
+
+        if (chainConfig && chainConfig.client && chainConfig.contractAddress) {
+          try {
+            console.log(
+              `Submitting outcome ${outcome} to ${chainConfig.chainName} for flight ${flightId}`
+            );
+
+            const hash = await chainConfig.client.writeContract({
+              address: chainConfig.contractAddress,
+              abi: contractAbi,
+              functionName: "resolveMarket",
+              args: [flightId as `0x${string}`, outcome],
+            });
+
+            txHash = hash;
+            console.log(`Transaction submitted: ${hash}`);
+          } catch (error) {
+            console.error("Blockchain submission error:", error);
+            return new Response(
+              JSON.stringify({
+                error: "Blockchain submission failed",
+                message:
+                  error instanceof Error ? error.message : "Unknown error",
+                flightId,
+                outcome,
+                flight: matchedFlight,
+              }),
+              { status: 500, headers }
+            );
+          }
+        } else {
+          console.warn("Blockchain client not configured, skipping submission");
+        }
+
         // Return only the matched flight and outcome
         return new Response(
           JSON.stringify({
             flightId,
             flight: matchedFlight,
             outcome, // 0=NOT_FOUND, 1=ON_TIME, 2=DELAY_30, 3=DELAY_120_PLUS, 4=CANCELLED
+            blockchain: {
+              chain: chainConfig?.chainName || "Unknown",
+              txHash,
+              submitted: !!txHash,
+            },
           }),
           { status: 200, headers }
         );
@@ -159,7 +275,15 @@ const server = Bun.serve({
     // Health check endpoint
     if (url.pathname === "/health") {
       return new Response(
-        JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }),
+        JSON.stringify({
+          status: "ok",
+          timestamp: new Date().toISOString(),
+          walletConfigured: !!account,
+          chains: {
+            sepolia: !!sepoliaClient,
+            celo: !!celoClient,
+          },
+        }),
         { headers }
       );
     }
@@ -175,6 +299,7 @@ const server = Bun.serve({
 console.log(`🚀 Bun server running at http://localhost:${server.port}`);
 console.log(`📡 Resolve endpoint: http://localhost:${server.port}/resolve`);
 console.log(
-  `   Example: http://localhost:${server.port}/resolve?flightId=0x123&departureCode=FRA&date=2025-11-03T07:05&airlineCode=AF&flightNumber=1019`
+  `   Example: http://localhost:${server.port}/resolve?flightId=0x123&departureCode=FRA&date=2025-11-03T07:05&airlineCode=AF&flightNumber=1019&chain=S`
 );
-console.log(`   Or with space: ...&date=2025-11-03%2007:05 (URL encoded)`);
+console.log(`   Chain: S=Sepolia, C=Celo`);
+console.log(`💼 Wallet configured: ${!!account}`);
