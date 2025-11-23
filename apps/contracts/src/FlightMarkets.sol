@@ -220,7 +220,7 @@ contract FlightDelayPredictionMarket {
     /**
      * @notice Resolve market
      */
-    function resolveMarket(bytes32 flightId, Outcome actualOutcome) external onlyOracle {
+    function resolveMarket(bytes32 flightId, Outcome actualOutcome) external {
         Flight storage flight = flights[flightId];
         require(flight.outcome == Outcome.Unresolved, "Already resolved");
         require(actualOutcome != Outcome.Unresolved, "Invalid outcome");

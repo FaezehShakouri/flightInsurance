@@ -17,7 +17,9 @@ interface CreateFlightMarketDialogProps {
   onSuccess?: () => void;
 }
 
-export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialogProps) {
+export function CreateFlightMarketDialog({
+  onSuccess,
+}: CreateFlightMarketDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     flightNumber: "1019",
@@ -27,7 +29,13 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
     scheduledTime: "2025-11-03T07:05",
   });
 
-  const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
+  const {
+    writeContract,
+    data: hash,
+    isPending,
+    error,
+    reset,
+  } = useWriteContract();
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -37,10 +45,15 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
     e.preventDefault();
 
     try {
-      // Convert datetime-local format to ISO string for the contract
-      const isoTime = formData.scheduledTime 
-        ? new Date(formData.scheduledTime).toISOString() 
-        : "";
+      // Convert datetime-local format to ISO string while preserving local time
+      // datetime-local gives us "YYYY-MM-DDTHH:MM" in local time
+      // We need to convert it to ISO format without timezone conversion
+      let isoTime = "";
+      if (formData.scheduledTime) {
+        // Append seconds and milliseconds, then 'Z' to indicate UTC without conversion
+        // This preserves the time as entered by the user
+        isoTime = formData.scheduledTime + ":00.000Z";
+      }
 
       writeContract({
         address: FLIGHT_MARKET_CONTRACT_ADDRESS,
@@ -77,23 +90,25 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
 
   if (isSuccess) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <Card className="w-full max-w-md border-blue-200 bg-white">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4">
+        <Card className="w-full max-w-md border-slate-700 bg-slate-800 shadow-2xl">
           <CardHeader>
-            <CardTitle className="text-green-600">✓ Market Created!</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-green-400">✓ Market Created!</CardTitle>
+            <CardDescription className="text-gray-300">
               Your flight market has been successfully created.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-                <p className="text-xs text-gray-600">Transaction Hash</p>
-                <p className="break-all text-sm font-mono text-gray-900">{hash}</p>
+              <div className="rounded-lg border border-slate-600 bg-slate-700/50 p-3">
+                <p className="text-xs text-gray-400">Transaction Hash</p>
+                <p className="break-all text-sm font-mono text-gray-200">
+                  {hash}
+                </p>
               </div>
               <Button
                 onClick={handleClose}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20"
               >
                 Close
               </Button>
@@ -116,11 +131,11 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="w-full max-w-md border-blue-200 bg-white">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4">
+      <Card className="w-full max-w-md border-slate-700 bg-slate-800 shadow-2xl">
         <CardHeader>
-          <CardTitle className="text-gray-900">Create New Flight Market</CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardTitle className="text-white">Create New Flight Market</CardTitle>
+          <CardDescription className="text-gray-300">
             Add a new flight to start trading
           </CardDescription>
         </CardHeader>
@@ -128,7 +143,7 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-[1fr_2fr] gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Airline Code *
                 </label>
                 <input
@@ -143,12 +158,12 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                       airlineCode: e.target.value.toUpperCase(),
                     })
                   }
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm text-white placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Flight Number *
                 </label>
                 <input
@@ -159,14 +174,14 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                   onChange={(e) =>
                     setFormData({ ...formData, flightNumber: e.target.value })
                   }
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm text-white placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Departure Code *
                 </label>
                 <input
@@ -181,12 +196,12 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                       departureCode: e.target.value.toUpperCase(),
                     })
                   }
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm text-white placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Destination Code *
                 </label>
                 <input
@@ -201,13 +216,13 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                       destinationCode: e.target.value.toUpperCase(),
                     })
                   }
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm text-white placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Scheduled Time *
               </label>
               <input
@@ -220,16 +235,16 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                   // Will be converted to ISO when submitting
                   setFormData({ ...formData, scheduledTime: e.target.value });
                 }}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm text-white placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-400">
                 e.g., 03-11-2025 7:05 AM (Nov 3, 2025)
               </p>
             </div>
 
             {error && (
-              <div className="rounded-lg border border-red-300 bg-red-50 p-3">
-                <p className="text-sm text-red-600">
+              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-sm text-red-400">
                   Error: {error.message.split("\n")[0]}
                 </p>
               </div>
@@ -240,14 +255,14 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                 type="button"
                 onClick={handleClose}
                 variant="outline"
-                className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                className="flex-1 border-slate-600 text-gray-300 hover:bg-slate-700"
                 disabled={isPending || isConfirming}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                 disabled={isPending || isConfirming}
               >
                 {isPending
@@ -263,4 +278,3 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
     </div>
   );
 }
-
