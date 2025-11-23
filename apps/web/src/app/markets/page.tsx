@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FLIGHT_MARKET_CONTRACT_ADDRESS } from "@/lib/contract";
+import { CreateFlightMarketDialog } from "@/components/create-flight-market-dialog";
 import FlightMarketABI from "../abi.json";
 
 type OutcomeType = "ON_TIME" | "CANCELLED" | "DELAY_30" | "DELAY_120_PLUS";
@@ -76,11 +77,16 @@ export default function MarketsPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch flight data from the contract
-  const { data: flightsData, isLoading, error } = useReadContract({
+  const { data: flightsData, isLoading, error, refetch } = useReadContract({
     address: FLIGHT_MARKET_CONTRACT_ADDRESS,
     abi: FlightMarketABI,
     functionName: "getAllFlights",
   });
+
+  // Refetch markets when a new one is created
+  const handleMarketCreated = () => {
+    refetch();
+  };
 
   // Transform contract data to FlightMarket format
   const markets: FlightMarket[] = useMemo(() => {
@@ -211,6 +217,9 @@ export default function MarketsPage() {
             underwrites. Filter by trigger or search by flight, route, or
             airline to find the market you need.
           </p>
+          <div className="flex justify-center pt-4">
+            <CreateFlightMarketDialog onSuccess={handleMarketCreated} />
+          </div>
         </header>
 
         {isLoading && (
