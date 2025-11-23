@@ -30,11 +30,6 @@ type FlightMarket = {
   outcomes: MarketOutcome[];
 };
 
-const outcomeLabels: Record<OutcomeType, string> = {
-  DELAY_30: "30 min delay",
-  CANCEL: "Cancellation",
-};
-
 const marketsSeed: FlightMarket[] = [
   {
     id: "DL104-2024-12-01",
@@ -169,6 +164,11 @@ const marketsSeed: FlightMarket[] = [
     ],
   },
 ];
+
+const outcomeLabels: Record<OutcomeType, string> = {
+  DELAY_30: "30 min delay",
+  CANCEL: "Cancellation",
+};
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -361,42 +361,10 @@ export default function MarketsPage() {
               <CardContent className="flex flex-1 flex-col space-y-4">
                 <div className="space-y-2">
                   {market.outcomes.map((outcome) => (
-                    <div
+                    <OutcomeRow
                       key={`${market.id}-${outcome.type}`}
-                      className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-slate-300 sm:text-sm"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3 text-white">
-                        <span className="font-semibold">
-                          {outcomeLabels[outcome.type]}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sky-200 text-sm">
-                            {percent.format(outcome.impliedProbability / 100)}
-                          </span>
-                          <div className="flex gap-1">
-                            <Button
-                              className="h-6 w-8 bg-white text-slate-900 hover:bg-slate-100"
-                              size="icon"
-                            >
-                              YES
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-6 w-8 border-white/30 bg-transparent text-white hover:border-sky-200 hover:bg-sky-200/10"
-                            >
-                              NO
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 sm:text-xs">
-                        <span>YES {currency.format(outcome.yesPrice)}</span>
-                        <span>
-                          Coverage {currency.format(outcome.coverageDemand)}
-                        </span>
-                      </div>
-                    </div>
+                      outcome={outcome}
+                    />
                   ))}
                 </div>
               </CardContent>
@@ -405,5 +373,50 @@ export default function MarketsPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+function OutcomeRow({ outcome }: { outcome: MarketOutcome }) {
+  const [yesNo, setYesNo] = useState(true);
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-slate-300 sm:text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-white">
+        <span className="font-semibold">{outcomeLabels[outcome.type]}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sky-200 text-sm">
+            {percent.format(outcome.impliedProbability / 100)}
+          </span>
+          <div className="flex gap-1">
+            <Button
+              className={`h-6 w-8 hover:border-sky-200 hover:bg-sky-200/10 ${
+                yesNo
+                  ? "bg-white text-slate-900 hover:bg-slate-100"
+                  : "border-white/30 bg-transparent text-white"
+              }`}
+              size="icon"
+              onClick={() => setYesNo(true)}
+            >
+              YES
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className={`h-6 w-8 hover:border-sky-200 hover:bg-sky-200/10 ${
+                yesNo
+                  ? "border-white/30 bg-transparent text-white"
+                  : "bg-white text-slate-900 hover:bg-slate-100"
+              }`}
+              onClick={() => setYesNo(false)}
+            >
+              NO
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 sm:text-xs">
+        <span>YES {currency.format(outcome.yesPrice)}</span>
+        <span>Coverage {currency.format(outcome.coverageDemand)}</span>
+      </div>
+    </div>
   );
 }
