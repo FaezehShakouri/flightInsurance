@@ -194,19 +194,7 @@ const server = Bun.serve({
 
         // Return error if no matching flight found
         if (!matchedFlight) {
-          return new Response(
-            JSON.stringify({
-              error: "No matching flight found",
-              flightId,
-              departureCode,
-              date,
-              scheduledDateTime: dateTime,
-              airlineCode,
-              flightNumber,
-              outcome: 0,
-            }),
-            { status: 404, headers }
-          );
+          outcome = 2;
         }
 
         // Submit to blockchain

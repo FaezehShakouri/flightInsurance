@@ -17,6 +17,10 @@ import { CreateFlightMarketDialog } from "@/components/create-flight-market-dial
 import { BuySellSharesDialog } from "@/components/buy-sell-shares-dialog";
 import FlightMarketABI from "../abi.json";
 
+// Oasis API endpoint
+const OASIS_API_URL =
+  process.env.NEXT_PUBLIC_OASIS_API_URL || "http://localhost:4500";
+
 type OutcomeType = "ON_TIME" | "CANCELLED" | "DELAY_30" | "DELAY_120_PLUS";
 
 type MarketOutcome = {
@@ -86,9 +90,15 @@ export default function MarketsPage() {
     "ALL"
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [resolvingMarket, setResolvingMarket] = useState<string | null>(null);
 
   // Fetch flight data from the contract
-  const { data: flightsData, isLoading, error, refetch } = useReadContract({
+  const {
+    data: flightsData,
+    isLoading,
+    error,
+    refetch,
+  } = useReadContract({
     address: FLIGHT_MARKET_CONTRACT_ADDRESS,
     abi: FlightMarketABI,
     functionName: "getAllFlights",
@@ -99,6 +109,52 @@ export default function MarketsPage() {
     refetch();
   };
 
+  // Resolve market function
+  const handleResolveMarket = async (market: FlightMarket) => {
+    setResolvingMarket(market.id);
+
+    try {
+      // Call Oasis API to resolve the market
+      const url = new URL(`${OASIS_API_URL}/resolve`);
+      url.searchParams.append("flightId", market.id);
+      url.searchParams.append("departureCode", market.route.split(" → ")[0]);
+      url.searchParams.append("date", market.departureDate);
+      url.searchParams.append("airlineCode", market.airline);
+      url.searchParams.append("flightNumber", market.flightNumber);
+      url.searchParams.append("chain", "S"); // S for Sepolia, C for Celo
+
+      console.log("Resolving market:", url.toString());
+
+      const response = await fetch(url.toString());
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to resolve market");
+      }
+
+      console.log("Market resolved:", data);
+      alert(
+        `Market resolved! Outcome: ${data.outcome}\nTx Hash: ${
+          data.blockchain?.txHash || "N/A"
+        }`
+      );
+
+      // Wait a bit for blockchain confirmation then refetch
+      setTimeout(() => {
+        refetch();
+      }, 3000);
+    } catch (error) {
+      console.error("Error resolving market:", error);
+      alert(
+        `Error: ${
+          error instanceof Error ? error.message : "Failed to resolve market"
+        }`
+      );
+    } finally {
+      setResolvingMarket(null);
+    }
+  };
+
   // Transform contract data to FlightMarket format
   const markets: FlightMarket[] = useMemo(() => {
     if (!flightsData || !Array.isArray(flightsData)) return [];
@@ -106,30 +162,70 @@ export default function MarketsPage() {
     return (flightsData as any[]).map((flight) => {
       // New structure has onTime, delayed30, delayed120Plus, cancelled objects
       // Each has: yesShares, noShares, yesPrice, noPrice
-      const onTime = flight.onTime || { yesShares: 0n, noShares: 0n, yesPrice: 0n, noPrice: 0n };
-      const delayed30 = flight.delayed30 || { yesShares: 0n, noShares: 0n, yesPrice: 0n, noPrice: 0n };
-      const delayed120Plus = flight.delayed120Plus || { yesShares: 0n, noShares: 0n, yesPrice: 0n, noPrice: 0n };
-      const cancelled = flight.cancelled || { yesShares: 0n, noShares: 0n, yesPrice: 0n, noPrice: 0n };
+      const onTime = flight.onTime || {
+        yesShares: 0n,
+        noShares: 0n,
+        yesPrice: 0n,
+        noPrice: 0n,
+      };
+      const delayed30 = flight.delayed30 || {
+        yesShares: 0n,
+        noShares: 0n,
+        yesPrice: 0n,
+        noPrice: 0n,
+      };
+      const delayed120Plus = flight.delayed120Plus || {
+        yesShares: 0n,
+        noShares: 0n,
+        yesPrice: 0n,
+        noPrice: 0n,
+      };
+      const cancelled = flight.cancelled || {
+        yesShares: 0n,
+        noShares: 0n,
+        yesPrice: 0n,
+        noPrice: 0n,
+      };
 
-      const totalShares = 
-        BigInt(onTime.yesShares || 0) + BigInt(onTime.noShares || 0) +
-        BigInt(delayed30.yesShares || 0) + BigInt(delayed30.noShares || 0) +
-        BigInt(delayed120Plus.yesShares || 0) + BigInt(delayed120Plus.noShares || 0) +
-        BigInt(cancelled.yesShares || 0) + BigInt(cancelled.noShares || 0);
-      
+      const totalShares =
+        BigInt(onTime.yesShares || 0) +
+        BigInt(onTime.noShares || 0) +
+        BigInt(delayed30.yesShares || 0) +
+        BigInt(delayed30.noShares || 0) +
+        BigInt(delayed120Plus.yesShares || 0) +
+        BigInt(delayed120Plus.noShares || 0) +
+        BigInt(cancelled.yesShares || 0) +
+        BigInt(cancelled.noShares || 0);
+
       const totalLiquidityValue = Number(formatUnits(totalShares, 18));
 
       // Parse YES prices (scaled by 1e18)
-      const onTimeYesPrice = Number(formatUnits(BigInt(onTime.yesPrice || 0), 18));
-      const delayed30YesPrice = Number(formatUnits(BigInt(delayed30.yesPrice || 0), 18));
-      const delayed120YesPrice = Number(formatUnits(BigInt(delayed120Plus.yesPrice || 0), 18));
-      const cancelledYesPrice = Number(formatUnits(BigInt(cancelled.yesPrice || 0), 18));
+      const onTimeYesPrice = Number(
+        formatUnits(BigInt(onTime.yesPrice || 0), 18)
+      );
+      const delayed30YesPrice = Number(
+        formatUnits(BigInt(delayed30.yesPrice || 0), 18)
+      );
+      const delayed120YesPrice = Number(
+        formatUnits(BigInt(delayed120Plus.yesPrice || 0), 18)
+      );
+      const cancelledYesPrice = Number(
+        formatUnits(BigInt(cancelled.yesPrice || 0), 18)
+      );
 
       // Parse NO prices (scaled by 1e18)
-      const onTimeNoPrice = Number(formatUnits(BigInt(onTime.noPrice || 0), 18));
-      const delayed30NoPrice = Number(formatUnits(BigInt(delayed30.noPrice || 0), 18));
-      const delayed120NoPrice = Number(formatUnits(BigInt(delayed120Plus.noPrice || 0), 18));
-      const cancelledNoPrice = Number(formatUnits(BigInt(cancelled.noPrice || 0), 18));
+      const onTimeNoPrice = Number(
+        formatUnits(BigInt(onTime.noPrice || 0), 18)
+      );
+      const delayed30NoPrice = Number(
+        formatUnits(BigInt(delayed30.noPrice || 0), 18)
+      );
+      const delayed120NoPrice = Number(
+        formatUnits(BigInt(delayed120Plus.noPrice || 0), 18)
+      );
+      const cancelledNoPrice = Number(
+        formatUnits(BigInt(cancelled.noPrice || 0), 18)
+      );
 
       const outcomes: MarketOutcome[] = [
         {
@@ -206,7 +302,9 @@ export default function MarketsPage() {
       (sum, market) =>
         sum +
         market.outcomes.reduce(
-          (outcomeSum, outcome) => outcomeSum + Number(formatUnits(outcome.yesShares + outcome.noShares, 18)),
+          (outcomeSum, outcome) =>
+            outcomeSum +
+            Number(formatUnits(outcome.yesShares + outcome.noShares, 18)),
           0
         ),
       0
@@ -247,7 +345,8 @@ export default function MarketsPage() {
             Flight Markets
           </h1>
           <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-            Bet on flight delays and cancellations. Pick a flight and start trading!
+            Bet on flight delays and cancellations. Pick a flight and start
+            trading!
           </p>
           <div className="flex justify-center pt-4">
             <CreateFlightMarketDialog onSuccess={handleMarketCreated} />
@@ -263,7 +362,9 @@ export default function MarketsPage() {
 
         {error && (
           <div className="text-center py-12">
-            <p className="text-red-400 text-lg">Error loading markets: {error.message}</p>
+            <p className="text-red-400 text-lg">
+              Error loading markets: {error.message}
+            </p>
           </div>
         )}
 
@@ -326,7 +427,9 @@ export default function MarketsPage() {
 
             {filteredMarkets.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-300 text-lg">No markets found. Try adjusting your filters.</p>
+                <p className="text-gray-300 text-lg">
+                  No markets found. Try adjusting your filters.
+                </p>
               </div>
             ) : (
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -355,8 +458,8 @@ export default function MarketsPage() {
                           {market.totalLiquidity === 0 ? "Status" : "Liquidity"}
                         </p>
                         <p className="text-base font-semibold text-white">
-                          {market.totalLiquidity === 0 
-                            ? "📊 New Market" 
+                          {market.totalLiquidity === 0
+                            ? "📊 New Market"
                             : currency.format(market.totalLiquidity)}
                         </p>
                       </div>
@@ -373,6 +476,17 @@ export default function MarketsPage() {
                           </p>
                         </div>
                       )}
+                      {market.outcome === 0 && (
+                        <Button
+                          onClick={() => handleResolveMarket(market)}
+                          disabled={resolvingMarket === market.id}
+                          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+                        >
+                          {resolvingMarket === market.id
+                            ? "Resolving..."
+                            : "🔍 Resolve Market"}
+                        </Button>
+                      )}
                     </CardHeader>
                     <CardContent className="flex flex-1 flex-col space-y-4">
                       <div className="space-y-2">
@@ -382,6 +496,7 @@ export default function MarketsPage() {
                             outcome={outcome}
                             flightId={market.id}
                             flightNumber={market.flightNumber}
+                            isResolved={market.outcome > 0}
                             onSuccess={handleMarketCreated}
                           />
                         ))}
@@ -398,31 +513,55 @@ export default function MarketsPage() {
   );
 }
 
-function OutcomeRow({ 
-  outcome, 
-  flightId, 
+function OutcomeRow({
+  outcome,
+  flightId,
   flightNumber,
-  onSuccess 
-}: { 
+  isResolved = false,
+  onSuccess,
+}: {
   outcome: MarketOutcome;
   flightId: string;
   flightNumber: string;
+  isResolved?: boolean;
   onSuccess?: () => void;
 }) {
   const hasYesShares = outcome.yesShares > 0n;
   const hasNoShares = outcome.noShares > 0n;
   const hasAnyShares = hasYesShares || hasNoShares;
   const totalShares = outcome.yesShares + outcome.noShares;
-  
+
   return (
     <div className="rounded-lg border border-slate-600 bg-slate-700/30 p-3 text-xs sm:text-sm">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-semibold text-white">{outcomeLabels[outcome.type]}</span>
-        {hasAnyShares ? (
+        <span className="font-semibold text-white">
+          {outcomeLabels[outcome.type]}
+        </span>
+        {isResolved ? (
+          <div className="flex items-center gap-2">
+            {hasAnyShares && (
+              <div className="text-right">
+                <div className="text-xs text-emerald-400 font-medium">
+                  YES {percent.format(outcome.yesPrice)}
+                </div>
+                <div className="text-xs text-red-400 font-medium">
+                  NO {percent.format(outcome.noPrice)}
+                </div>
+              </div>
+            )}
+            <div className="px-3 py-1 rounded-md bg-slate-600 text-gray-300 text-xs font-medium">
+              Resolved
+            </div>
+          </div>
+        ) : hasAnyShares ? (
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <div className="text-xs text-emerald-400 font-medium">YES {percent.format(outcome.yesPrice)}</div>
-              <div className="text-xs text-red-400 font-medium">NO {percent.format(outcome.noPrice)}</div>
+              <div className="text-xs text-emerald-400 font-medium">
+                YES {percent.format(outcome.yesPrice)}
+              </div>
+              <div className="text-xs text-red-400 font-medium">
+                NO {percent.format(outcome.noPrice)}
+              </div>
             </div>
             <BuySellSharesDialog
               flightId={flightId}
@@ -453,9 +592,13 @@ function OutcomeRow({
         <span>
           {hasAnyShares ? (
             <>
-              <span className="text-emerald-400">YES: {formatUnits(outcome.yesShares, 18).substring(0, 6)}</span>
+              <span className="text-emerald-400">
+                YES: {formatUnits(outcome.yesShares, 18).substring(0, 6)}
+              </span>
               {" / "}
-              <span className="text-red-400">NO: {formatUnits(outcome.noShares, 18).substring(0, 6)}</span>
+              <span className="text-red-400">
+                NO: {formatUnits(outcome.noShares, 18).substring(0, 6)}
+              </span>
             </>
           ) : (
             "No positions yet"
