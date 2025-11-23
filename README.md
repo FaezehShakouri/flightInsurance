@@ -371,14 +371,6 @@ GET /resolve?flightId=...&departureCode=...&date=...&airlineCode=...&flightNumbe
 
 - **Solution**: Check you have sufficient CUSD tokens and the market hasn't been resolved yet.
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## 📄 License
 
 MIT License - see LICENSE file for details
@@ -401,3 +393,6 @@ Ever been anxious about your flight being delayed? Why not make money from that 
 ---
 
 Made with ❤️ by the JetLagged team. Safe travels! ✈️
+
+- @zkfriendly: full-stack dev
+- @FaezehShakouri: front-end dev
