@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, ExternalLink } from "lucide-react";
+import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -47,14 +47,11 @@ export function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    target={link.external ? "_blank" : undefined}
-                    rel={link.external ? "noopener noreferrer" : undefined}
                     className={`flex items-center gap-2 text-base font-medium transition-colors hover:text-blue-400 ${
                       pathname === link.href ? "text-blue-400" : "text-gray-300"
                     }`}
                   >
                     {link.name}
-                    {link.external && <ExternalLink className="h-4 w-4" />}
                   </Link>
                 ))}
                 <div className="mt-6 pt-6 border-t border-slate-800">
@@ -82,14 +79,11 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              target={link.external ? "_blank" : undefined}
-              rel={link.external ? "noopener noreferrer" : undefined}
               className={`flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-400 ${
                 pathname === link.href ? "text-blue-400" : "text-gray-300"
               }`}
             >
               {link.name}
-              {link.external && <ExternalLink className="h-4 w-4" />}
             </Link>
           ))}
 

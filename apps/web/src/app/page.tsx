@@ -4,6 +4,7 @@ import { sdk } from "@farcaster/frame-sdk";
 import { useState, useEffect } from "react";
 import { useAccount, useConnect } from "wagmi";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   const { context, isMiniAppReady } = useMiniApp();
@@ -13,7 +14,7 @@ export default function Home() {
   );
 
   // Wallet connection hooks
-  const { address, isConnected, isConnecting } = useAccount();
+  const { isConnected, isConnecting } = useAccount();
   const { connect, connectors } = useConnect();
 
   // Auto-connect wallet when miniapp is ready
@@ -70,10 +71,12 @@ export default function Home() {
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-slate-700">
               <div className="flex items-center gap-4 justify-center mb-4">
                 {pfpUrl && (
-                  <img
+                  <Image
                     src={pfpUrl}
                     alt="Profile"
-                    className="w-16 h-16 rounded-full border-2 border-blue-400"
+                    width={64}
+                    height={64}
+                    className="rounded-full border-2 border-blue-400"
                   />
                 )}
                 <div className="text-left">
