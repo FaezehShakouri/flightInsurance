@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-type OutcomeType = "DELAY_30" | "DELAY_60" | "DELAY_90" | "CANCEL";
+type OutcomeType = "DELAY_30" | "CANCEL";
 
 type FlightMarket = {
   id: string;
@@ -38,7 +38,7 @@ const seedMarkets: FlightMarket[] = [
     impliedProbability: 22,
     totalLiquidity: 32500,
     coverageDemand: 12800,
-    outcomeType: "DELAY",
+    outcomeType: "DELAY_30",
   },
   {
     id: "UA881-2024-12-02",
@@ -60,7 +60,7 @@ const seedMarkets: FlightMarket[] = [
     impliedProbability: 29,
     totalLiquidity: 28750,
     coverageDemand: 16500,
-    outcomeType: "DELAY",
+    outcomeType: "DELAY_30",
   },
 ];
 
@@ -110,10 +110,8 @@ export default function BetPage() {
 
   const premiumQuote = useMemo(() => {
     const outcomeBase: Record<OutcomeType, number> = {
-      DELAY_30: 0.14,
-      DELAY_60: 0.18,
-      DELAY_90: 0.23,
-      CANCEL: 0.28,
+      DELAY_30: 0.18,
+      CANCEL: 0.32,
     };
     const base = outcomeBase[outcomeType];
     const coverageFactor = Math.min(0.08, (formState.coverage || 0) / 5000);
@@ -134,8 +132,6 @@ export default function BetPage() {
   const previewDate = formState.departureDate || "Dec 03, 2024";
   const outcomeLabels: Record<OutcomeType, string> = {
     DELAY_30: "30 min delay",
-    DELAY_60: "60 min delay",
-    DELAY_90: "90+ min delay",
     CANCEL: "Cancellation",
   };
 
@@ -236,16 +232,16 @@ export default function BetPage() {
   };
 
   return (
-    <section className="bg-gradient-to-b from-sky-50 via-white to-indigo-50 py-10">
+    <section className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 py-12 text-white">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4">
         <header className="text-center space-y-3">
-          <p className="text-xs uppercase tracking-[0.4em] text-indigo-500">
+          <p className="text-xs uppercase tracking-[0.4em] text-sky-300">
             SkyShield underwriting desk
           </p>
-          <h1 className="text-4xl font-semibold text-slate-900 sm:text-5xl">
+          <h1 className="text-4xl font-semibold text-white sm:text-5xl">
             Get a flight insurance quote in seconds
           </h1>
-          <p className="text-base text-slate-600">
+          <p className="text-base text-slate-300">
             Enter your flight, choose the delay or cancellation trigger, and we
             will price the policy. If a pool does not exist yet, we launch one
             on the fly.
@@ -260,13 +256,11 @@ export default function BetPage() {
           ).map((tile) => (
             <div
               key={tile.label}
-              className="flex flex-col items-center rounded-2xl border border-sky-100 bg-white/90 px-4 py-4 text-center shadow-sm shadow-sky-100/60"
+              className="flex flex-col items-center rounded-2xl border border-white/5 bg-white/5 px-4 py-4 text-center shadow-lg shadow-black/30"
             >
               <span className="text-xl">{tile.icon}</span>
-              <p className="text-2xl font-semibold text-slate-900">
-                {tile.value}
-              </p>
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="text-2xl font-semibold text-white">{tile.value}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-300">
                 {tile.label}
               </p>
             </div>
@@ -274,10 +268,10 @@ export default function BetPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="shadow-xl ring-1 ring-sky-100/70 bg-white/95">
+          <Card className="border-white/10 bg-white/5 text-white shadow-2xl shadow-black/30">
             <CardHeader>
               <CardTitle>Flight insurance request</CardTitle>
-              <CardDescription>
+              <CardDescription className="text-slate-300">
                 Provide flight details and desired payout. We auto-route the
                 request to the right prediction market.
               </CardDescription>
@@ -285,7 +279,7 @@ export default function BetPage() {
             <CardContent>
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label className="text-sm font-medium text-slate-200">
                     Flight number
                   </label>
                   <input
@@ -298,13 +292,13 @@ export default function BetPage() {
                       }))
                     }
                     placeholder="e.g. AF008"
-                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-base focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-base text-white placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
                   />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-200">
                       Departure date
                     </label>
                     <input
@@ -316,11 +310,11 @@ export default function BetPage() {
                           departureDate: event.target.value,
                         }))
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-base focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-base text-white placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-200">
                       Route (optional)
                     </label>
                     <input
@@ -333,14 +327,14 @@ export default function BetPage() {
                         }))
                       }
                       placeholder="e.g. CDG → JFK"
-                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-base focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-base text-white placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
                     />
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-200">
                       Coverage amount (USDC)
                     </label>
                     <input
@@ -357,12 +351,12 @@ export default function BetPage() {
                           ),
                         }))
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-base focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-base text-white placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-200">
                       Outcome to insure
                     </label>
                     <select
@@ -370,11 +364,9 @@ export default function BetPage() {
                       onChange={(event) =>
                         setOutcomeType(event.target.value as OutcomeType)
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-base focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-base text-white focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/40"
                     >
                       <option value="DELAY_30">30 min delay</option>
-                      <option value="DELAY_60">60 min delay</option>
-                      <option value="DELAY_90">90+ min delay</option>
                       <option value="CANCEL">Cancellation</option>
                     </select>
                   </div>
@@ -382,7 +374,7 @@ export default function BetPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-sky-600 text-white shadow-sm transition hover:bg-sky-500"
+                  className="w-full bg-white text-slate-900 shadow-sm transition hover:bg-slate-100"
                 >
                   Submit for underwriting
                 </Button>
@@ -393,8 +385,8 @@ export default function BetPage() {
                 <div
                   className={`w-full rounded-lg border px-4 py-3 text-sm ${
                     statusTone === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                      : "border-slate-200 bg-white text-slate-700"
+                      ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-100"
+                      : "border-white/15 bg-white/5 text-slate-200"
                   }`}
                 >
                   {statusMessage}
@@ -404,10 +396,10 @@ export default function BetPage() {
           </Card>
 
           <div className="space-y-6">
-            <Card className="shadow-xl ring-1 ring-sky-100/70 bg-white/95">
+            <Card className="border-white/10 bg-white/5 text-white shadow-2xl shadow-black/30">
               <CardHeader>
                 <CardTitle>Flight insurance summary</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-slate-300">
                   Live snapshot of the policy request exactly as the AMM sees
                   it.
                 </CardDescription>
@@ -438,28 +430,28 @@ export default function BetPage() {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-inner">
-                  <div className="flex items-center justify-between text-sm text-slate-600">
+                <div className="rounded-lg border border-white/10 bg-white/5 p-4 shadow-inner">
+                  <div className="flex items-center justify-between text-sm text-slate-200">
                     <span>YES share price</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-white">
                       {currency.format(premiumQuote.yesPrice)}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
+                  <div className="mt-2 flex items-center justify-between text-sm text-slate-200">
                     <span>Implied probability</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-white">
                       {percent.format(premiumQuote.impliedProbability / 100)}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
+                  <div className="mt-2 flex items-center justify-between text-sm text-slate-200">
                     <span>Requested coverage</span>
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-white">
                       {currency.format(formState.coverage || 0)}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
+                  <div className="mt-2 flex items-center justify-between text-sm text-slate-200">
                     <span>Premium due today</span>
-                    <span className="font-semibold text-indigo-600">
+                    <span className="font-semibold text-sky-200">
                       {currency.format(premiumQuote.premium || 0)}
                     </span>
                   </div>
@@ -467,15 +459,15 @@ export default function BetPage() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg ring-1 ring-slate-100 bg-white/95">
+            <Card className="border-white/10 bg-white/5 text-white shadow-2xl shadow-black/30">
               <CardHeader>
                 <CardTitle>How SkyShield settles policies</CardTitle>
-                <CardDescription>
+                <CardDescription className="text-slate-300">
                   Every policy flows through a collateralized prediction market
                   so payouts stay transparent.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm text-slate-600">
+              <CardContent className="space-y-3 text-sm text-slate-200">
                 <p>
                   1. File the route and payout target. We quote a YES share
                   price from the AMM curve.
@@ -494,52 +486,46 @@ export default function BetPage() {
         </div>
 
         <Card
-          className="shadow-xl ring-1 ring-slate-100 bg-white/95"
+          className="border-white/10 bg-white/5 text-white shadow-2xl shadow-black/30"
           id="flight-markets"
         >
           <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Active coverage pools</CardTitle>
-              <CardDescription>
+              <CardDescription className="text-slate-300">
                 Tap a pool to auto-fill the intake form with its flight details.
               </CardDescription>
             </div>
-            <span className="text-sm font-medium text-indigo-600">
+            <span className="text-sm font-medium text-sky-300">
               {markets.length} markets live
             </span>
           </CardHeader>
           <CardContent className="overflow-x-auto p-0">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50">
+            <table className="min-w-full divide-y divide-white/10 text-sm">
+              <thead className="bg-white/5 text-slate-200">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">
-                    Flight
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">
-                    Date
-                  </th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">
-                    Outcome
-                  </th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">
+                  <th className="px-4 py-3 text-left font-medium">Flight</th>
+                  <th className="px-4 py-3 text-left font-medium">Date</th>
+                  <th className="px-4 py-3 text-left font-medium">Outcome</th>
+                  <th className="px-4 py-3 text-right font-medium">
                     YES price
                   </th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">
+                  <th className="px-4 py-3 text-right font-medium">
                     Implied prob.
                   </th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">
+                  <th className="px-4 py-3 text-right font-medium">
                     Coverage demand
                   </th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">
+                  <th className="px-4 py-3 text-right font-medium">
                     Liquidity
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-white/10">
                 {sortedMarkets.map((market) => (
                   <tr
                     key={market.id}
-                    className="cursor-pointer transition-colors hover:bg-sky-50/60"
+                    className="cursor-pointer transition-colors hover:bg-white/5"
                     onClick={() =>
                       setFormState((prev) => ({
                         ...prev,
@@ -549,25 +535,25 @@ export default function BetPage() {
                       }))
                     }
                   >
-                    <td className="px-4 py-3 font-semibold text-slate-900">
+                    <td className="px-4 py-3 font-semibold text-white">
                       {market.flightNumber}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-300">
                       {market.departureDate}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-slate-300">
                       {outcomeLabels[market.outcomeType]}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-slate-900">
+                    <td className="px-4 py-3 text-right font-mono text-white">
                       {currency.format(market.yesPrice)}
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-600">
+                    <td className="px-4 py-3 text-right text-slate-300">
                       {percent.format(market.impliedProbability / 100)}
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-900">
+                    <td className="px-4 py-3 text-right text-white">
                       {currency.format(market.coverageDemand)}
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-900">
+                    <td className="px-4 py-3 text-right text-white">
                       {currency.format(market.totalLiquidity)}
                     </td>
                   </tr>
