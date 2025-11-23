@@ -121,7 +121,7 @@ export default function MarketsPage() {
       url.searchParams.append("date", market.departureDate);
       url.searchParams.append("airlineCode", market.airline);
       url.searchParams.append("flightNumber", market.flightNumber);
-      url.searchParams.append("chain", "S"); // S for Sepolia, C for Celo
+      url.searchParams.append("chain", "C"); // S for Sepolia, C for Celo
 
       console.log("Resolving market:", url.toString());
 

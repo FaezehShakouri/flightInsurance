@@ -3,7 +3,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 
 import { Navbar } from '@/components/navbar';
-import Providers from "@/components/providers"
+import Providers from "@/components/providers";
+import { ChainWarning } from '@/components/chain-warning';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -49,6 +50,7 @@ export default function RootLayout({
         {/* Navbar is included on all pages */}
         <div className="relative flex min-h-screen flex-col">
           <Providers>
+            <ChainWarning />
             <Navbar />
             <main className="flex-1">
               {children}
