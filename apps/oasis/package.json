@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "bun --hot index.ts",
-    "start": "bun index.ts"
+    "start": "bun index.ts",
+    "build": "echo 'No build step required for Bun'"
   },
   "dependencies": {
     "viem": "^2.21.54"

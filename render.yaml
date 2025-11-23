@@ -1,0 +1,47 @@
+services:
+  # Backend Service (Oasis - Bun.js)
+  - type: web
+    name: flight-insurance-backend
+    env: docker
+    dockerfilePath: ./apps/oasis/Dockerfile
+    dockerContext: ./apps/oasis
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: PRIVATE_KEY
+        sync: false
+      - key: SEPOLIA_RPC_URL
+        sync: false
+      - key: CELO_RPC_URL
+        value: https://forno.celo.org
+      - key: CONTRACT_ADDRESS_SEPOLIA
+        value: 0x49F1b8A77712Edf77Fa5d04D07d77a846B23A91B
+      - key: CONTRACT_ADDRESS_CELO
+        value: 0x243E571194C89E8B848137EdB46e5A1156272860
+      - key: AVIATION_EDGE_API_KEY
+        sync: false
+    healthCheckPath: /health
+
+  # Frontend Service (Next.js)
+  - type: web
+    name: flight-insurance-frontend
+    env: node
+    buildCommand: cd apps/web && npm install && npm run build
+    startCommand: cd apps/web && npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_URL
+        sync: false
+      - key: NEXT_PUBLIC_APP_ENV
+        value: production
+      - key: NEXT_PUBLIC_RPC_URL
+        value: https://forno.celo.org
+      - key: NEXT_PUBLIC_FARCASTER_HEADER
+        sync: false
+      - key: NEXT_PUBLIC_FARCASTER_PAYLOAD
+        sync: false
+      - key: NEXT_PUBLIC_FARCASTER_SIGNATURE
+        sync: false

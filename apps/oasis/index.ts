@@ -73,7 +73,7 @@ function getChainConfig(chain: string) {
 }
 
 const server = Bun.serve({
-  port: 4500,
+  port: process.env.PORT || 4500,
   async fetch(req) {
     const url = new URL(req.url);
 
@@ -88,6 +88,18 @@ const server = Bun.serve({
     // Handle OPTIONS preflight request
     if (req.method === "OPTIONS") {
       return new Response(null, { headers });
+    }
+
+    // Health check endpoint
+    if (url.pathname === "/health" && req.method === "GET") {
+      return new Response(
+        JSON.stringify({
+          status: "ok",
+          timestamp: new Date().toISOString(),
+          service: "flight-insurance-backend",
+        }),
+        { headers }
+      );
     }
 
     // Resolve endpoint
