@@ -22,14 +22,20 @@ export function WalletConnectButton() {
   }
 
   if (!isConnected) {
+    // Try frameWallet first, then fall back to metaMask
     const frameConnector = connectors.find(
-      (connector) =>
-        connector.id === "frameWallet" || connector.id === "metaMaskSDK"
+      (connector) => connector.id === "frameWallet"
     );
+    const metaMaskConnector = connectors.find(
+      (connector) => connector.id === "metaMaskSDK"
+    );
+    const selectedConnector = frameConnector || metaMaskConnector;
 
     return (
       <button
-        onClick={() => frameConnector && connect({ connector: frameConnector })}
+        onClick={() =>
+          selectedConnector && connect({ connector: selectedConnector })
+        }
         type="button"
         className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
       >
