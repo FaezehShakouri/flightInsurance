@@ -13,14 +13,14 @@ const appUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
 // Embed metadata for Farcaster sharing
 const frame = {
   version: "1",
-  imageUrl: `${appUrl}/opengraph-image.png`,
+  imageUrl: `${appUrl}/jetlagged.png`,
   button: {
     title: "Launch JetLagged",
     action: {
       type: "launch_frame",
       name: "JetLagged",
       url: appUrl,
-      splashImageUrl: `${appUrl}/icon.png`,
+      splashImageUrl: `${appUrl}/jetlagged.png`,
       splashBackgroundColor: "#3b82f6",
     },
   },
@@ -29,10 +29,14 @@ const frame = {
 export const metadata: Metadata = {
   title: 'JetLagged - Flight Delay Prediction Markets',
   description: 'Bet on flight delays and cancellations. Turn your travel anxiety into profit!',
+  icons: {
+    icon: '/jetlagged.png',
+    apple: '/jetlagged.png',
+  },
   openGraph: {
     title: 'JetLagged - Flight Delay Prediction Markets',
     description: 'Bet on flight delays and cancellations. Turn your travel anxiety into profit!',
-    images: [`${appUrl}/opengraph-image.png`],
+    images: [`${appUrl}/jetlagged.png`],
   },
   other: {
     "fc:frame": JSON.stringify(frame),

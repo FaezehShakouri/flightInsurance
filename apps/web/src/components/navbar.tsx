@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -37,7 +38,13 @@ export function Navbar() {
               className="w-80 bg-slate-900 border-slate-800"
             >
               <div className="flex items-center gap-2 mb-8">
-                <span className="text-2xl">✈️</span>
+                <Image
+                  src="/jetlagged.png"
+                  alt="JetLagged"
+                  width={32}
+                  height={32}
+                  className="rounded"
+                />
                 <span className="font-bold text-lg text-blue-400">
                   JetLagged
                 </span>
@@ -66,7 +73,13 @@ export function Navbar() {
             href="/"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <span className="text-2xl">✈️</span>
+            <Image
+              src="/jetlagged.png"
+              alt="JetLagged"
+              width={32}
+              height={32}
+              className="rounded"
+            />
             <span className="font-bold text-xl bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
               JetLagged
             </span>
