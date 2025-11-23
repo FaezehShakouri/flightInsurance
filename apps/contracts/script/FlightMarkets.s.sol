@@ -7,7 +7,7 @@ import {FlightDelayPredictionMarket} from "../src/FlightMarkets.sol";
 
 contract FlightDelayPredictionMarketScript is Script {
     FlightDelayPredictionMarket public market;
-    address public token = 0x33cb2dc2D031cb13a13A120ACFA60ff4e5B418DF;
+    address public token = 0xf8eD259Fc6689328Dd7a04817cA8b89554dDA8af;
     function setUp() public {}
 
     function run() public {

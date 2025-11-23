@@ -99,15 +99,34 @@ contract FlightDelayPredictionMarket {
         minLiquidity = newMinLiquidity;
     }
 
+    /**
+     * @notice Calculate the flight ID from flight parameters
+     * @param flightNumber The flight number (e.g., "AA100")
+     * @param departureCode The departure airport code (e.g., "JFK")
+     * @param destinationCode The destination airport code (e.g., "LAX")
+     * @param airlineCode The airline code (e.g., "AA")
+     * @param scheduledTime The scheduled time in YYYY-MM-DDThh:mm:ss.sss format
+     * @return flightId The unique identifier for the flight market
+     */
+    function calculateFlightId(
+        string memory flightNumber,
+        string memory departureCode,
+        string memory destinationCode,
+        string memory airlineCode,
+        string memory scheduledTime
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(flightNumber, departureCode, destinationCode, airlineCode, scheduledTime));
+    }
+
     function createFlightMarket(
         string memory flightNumber,
         string memory departureCode,
         string memory destinationCode,
         string memory airlineCode,
         string memory scheduledTime
-    ) external onlyOwner returns (bytes32) {
+    ) external returns (bytes32) {
         // todo: should not allow to create market after scheduled time
-        bytes32 flightId = keccak256(abi.encodePacked(flightNumber, departureCode, destinationCode, airlineCode, scheduledTime));
+        bytes32 flightId = calculateFlightId(flightNumber, departureCode, destinationCode, airlineCode, scheduledTime);
         require(flights[flightId].outcome == Outcome.Unresolved, "Flight market already exists");
         flights[flightId] = Flight({
             flightNumber: flightNumber,
