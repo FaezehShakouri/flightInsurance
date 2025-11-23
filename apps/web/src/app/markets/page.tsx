@@ -64,7 +64,7 @@ const percent = new Intl.NumberFormat("en-US", {
 });
 
 const kpiTiles = [
-  { label: "Pools active", detail: "within next 48h", icon: "🛫" },
+  { label: "Pools active", detail: "within next 48h", icon: "✈️" },
   { label: "Total liquidity", detail: "locked in USDC", icon: "💧" },
   { label: "Coverage demand", detail: "policy requests", icon: "🛡️" },
   { label: "Avg. risk quote", detail: "implied probability", icon: "⚖️" },

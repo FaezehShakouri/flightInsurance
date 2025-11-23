@@ -190,6 +190,9 @@ const headers = {
 
 ### Frontend Issues
 
+**Issue**: Build fails with "Cannot find module 'tailwindcss'"
+- **Solution**: Build dependencies are now in `dependencies` instead of `devDependencies` to ensure they're installed on Render. This is already configured in the `package.json`.
+
 **Issue**: Cannot connect to backend
 - Verify `NEXT_PUBLIC_BACKEND_URL` is set correctly
 - Ensure backend is deployed and running

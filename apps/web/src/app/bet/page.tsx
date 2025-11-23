@@ -155,7 +155,7 @@ export default function BetPage() {
     {
       label: "Flights monitored",
       value: `${marketCount}`,
-      icon: "🛫",
+      icon: "✈️",
     },
   ];
 

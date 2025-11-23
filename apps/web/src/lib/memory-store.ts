@@ -3,7 +3,7 @@ import type { FrameNotificationDetails } from "@farcaster/frame-sdk";
 // In-memory storage to replace Redis
 const notificationStore = new Map<string, FrameNotificationDetails>();
 
-const notificationServiceKey = "farcaster:miniapp";
+const notificationServiceKey = "jetlagged:miniapp";
 
 function getUserNotificationDetailsKey(fid: number): string {
   return `${notificationServiceKey}:user:${fid}`;

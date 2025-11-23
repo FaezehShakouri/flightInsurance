@@ -81,8 +81,8 @@ export async function POST(request: Request) {
       // Send a test notification
       await sendFrameNotification({
         fid,
-        title: "Welcome to farcaster-miniapp!",
-        body: "You've successfully enabled notifications.",
+        title: "Welcome to JetLagged!",
+        body: "You've successfully enabled notifications for flight delay markets.",
       });
 
       return new Response("OK");
