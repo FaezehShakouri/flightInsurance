@@ -333,24 +333,6 @@ forge test -vvv  # Verbose output
 - `forge test` - Run tests
 - `forge script script/FlightMarkets.s.sol --rpc-url celo --broadcast` - Deploy to Celo
 
-## 🌐 API Endpoints
-
-### Backend API
-
-**Base URL**: `http://localhost:4500` (dev) or your deployed URL
-
-#### Health Check
-
-```
-GET /health
-```
-
-#### Resolve Market
-
-```
-GET /resolve?flightId=...&departureCode=...&date=...&airlineCode=...&flightNumber=...&chain=C
-```
-
 ## 🐛 Troubleshooting
 
 ### Common Issues
@@ -377,7 +359,7 @@ MIT License - see LICENSE file for details
 
 ## 🔗 Links
 
-- **Live App**: [Your deployed URL]
+- **Live App**: https://flight-insurance-frontend.onrender.com/
 
 ## 💡 Inspiration
 
