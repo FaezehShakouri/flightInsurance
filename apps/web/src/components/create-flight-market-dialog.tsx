@@ -20,11 +20,11 @@ interface CreateFlightMarketDialogProps {
 export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
-    flightNumber: "",
-    departureCode: "",
-    destinationCode: "",
-    airlineCode: "",
-    scheduledTime: "",
+    flightNumber: "1019",
+    departureCode: "FRA",
+    destinationCode: "CDG",
+    airlineCode: "AF",
+    scheduledTime: "2025-11-03T07:05",
   });
 
   const { writeContract, data: hash, isPending, error, reset } = useWriteContract();
@@ -62,11 +62,11 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
   const handleClose = () => {
     setIsOpen(false);
     setFormData({
-      flightNumber: "",
-      departureCode: "",
-      destinationCode: "",
-      airlineCode: "",
-      scheduledTime: "",
+      flightNumber: "1019",
+      departureCode: "FRA",
+      destinationCode: "CDG",
+      airlineCode: "AF",
+      scheduledTime: "2025-11-03T07:05",
     });
     // Reset the transaction state
     reset();
@@ -134,7 +134,7 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                 <input
                   type="text"
                   required
-                  placeholder="AA"
+                  placeholder="AF"
                   maxLength={3}
                   value={formData.airlineCode}
                   onChange={(e) =>
@@ -154,7 +154,7 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                 <input
                   type="text"
                   required
-                  placeholder="123"
+                  placeholder="1019"
                   value={formData.flightNumber}
                   onChange={(e) =>
                     setFormData({ ...formData, flightNumber: e.target.value })
@@ -172,7 +172,7 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                 <input
                   type="text"
                   required
-                  placeholder="LAX"
+                  placeholder="FRA"
                   maxLength={3}
                   value={formData.departureCode}
                   onChange={(e) =>
@@ -192,7 +192,7 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                 <input
                   type="text"
                   required
-                  placeholder="JFK"
+                  placeholder="CDG"
                   maxLength={3}
                   value={formData.destinationCode}
                   onChange={(e) =>
@@ -213,6 +213,7 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
               <input
                 type="datetime-local"
                 required
+                placeholder="2025-11-03T07:05"
                 value={formData.scheduledTime}
                 onChange={(e) => {
                   // Store in datetime-local format (YYYY-MM-DDThh:mm)
@@ -222,7 +223,7 @@ export function CreateFlightMarketDialog({ onSuccess }: CreateFlightMarketDialog
                 className="w-full rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-slate-400 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-300/50"
               />
               <p className="mt-1 text-xs text-slate-400">
-                Select the scheduled departure date and time
+                e.g., 03-11-2025 7:05 AM (Nov 3, 2025)
               </p>
             </div>
 

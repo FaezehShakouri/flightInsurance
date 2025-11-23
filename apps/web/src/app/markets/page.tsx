@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { FLIGHT_MARKET_CONTRACT_ADDRESS } from "@/lib/contract";
 import { CreateFlightMarketDialog } from "@/components/create-flight-market-dialog";
+import { BuySellSharesDialog } from "@/components/buy-sell-shares-dialog";
 import FlightMarketABI from "../abi.json";
 
 type OutcomeType = "ON_TIME" | "CANCELLED" | "DELAY_30" | "DELAY_120_PLUS";
@@ -21,8 +22,11 @@ type OutcomeType = "ON_TIME" | "CANCELLED" | "DELAY_30" | "DELAY_120_PLUS";
 type MarketOutcome = {
   type: OutcomeType;
   yesPrice: number;
+  noPrice: number;
   impliedProbability: number;
-  totalShares: bigint;
+  yesShares: bigint;
+  noShares: bigint;
+  outcomeIndex: number; // 1=ON_TIME, 2=DELAY_30, 3=DELAY_120_PLUS, 4=CANCELLED
 };
 
 type FlightMarket = {
@@ -100,61 +104,69 @@ export default function MarketsPage() {
     if (!flightsData || !Array.isArray(flightsData)) return [];
 
     return (flightsData as any[]).map((flight) => {
-      // Debug: Log the raw probability values
-      console.log('Raw probability values:', {
-        onTime: flight.onTimeProbability?.toString(),
-        cancelled: flight.cancelledProbability?.toString(),
-        delayed30: flight.delayed30Probability?.toString(),
-        delayed120: flight.delayed120PlusProbability?.toString(),
-      });
+      // New structure has onTime, delayed30, delayed120Plus, cancelled objects
+      // Each has: yesShares, noShares, yesPrice, noPrice
+      const onTime = flight.onTime || { yesShares: 0n, noShares: 0n, yesPrice: 0n, noPrice: 0n };
+      const delayed30 = flight.delayed30 || { yesShares: 0n, noShares: 0n, yesPrice: 0n, noPrice: 0n };
+      const delayed120Plus = flight.delayed120Plus || { yesShares: 0n, noShares: 0n, yesPrice: 0n, noPrice: 0n };
+      const cancelled = flight.cancelled || { yesShares: 0n, noShares: 0n, yesPrice: 0n, noPrice: 0n };
 
-      const totalOnTimeShares = BigInt(flight.totalOnTimeShares || 0);
-      const totalCancelledShares = BigInt(flight.totalCancelledShares || 0);
-      const totalDelayed30Shares = BigInt(flight.totalDelayed30Shares || 0);
-      const totalDelayed120PlusShares = BigInt(flight.totalDelayed120PlusShares || 0);
-
-      const totalShares = totalOnTimeShares + totalCancelledShares + totalDelayed30Shares + totalDelayed120PlusShares;
+      const totalShares = 
+        BigInt(onTime.yesShares || 0) + BigInt(onTime.noShares || 0) +
+        BigInt(delayed30.yesShares || 0) + BigInt(delayed30.noShares || 0) +
+        BigInt(delayed120Plus.yesShares || 0) + BigInt(delayed120Plus.noShares || 0) +
+        BigInt(cancelled.yesShares || 0) + BigInt(cancelled.noShares || 0);
+      
       const totalLiquidityValue = Number(formatUnits(totalShares, 18));
 
-      // Parse the probabilities - they are stored with 18 decimals
-      // Example: 250000000000000000 = 0.25 (25%) when divided by 10^18
-      // Then multiply by 100 to convert to percentage display
-      const onTimeProbability = Number(formatUnits(BigInt(flight.onTimeProbability || 0), 18)) * 100;
-      const cancelledProbability = Number(formatUnits(BigInt(flight.cancelledProbability || 0), 18)) * 100;
-      const delayed30Probability = Number(formatUnits(BigInt(flight.delayed30Probability || 0), 18)) * 100;
-      const delayed120PlusProbability = Number(formatUnits(BigInt(flight.delayed120PlusProbability || 0), 18)) * 100;
+      // Parse YES prices (scaled by 1e18)
+      const onTimeYesPrice = Number(formatUnits(BigInt(onTime.yesPrice || 0), 18));
+      const delayed30YesPrice = Number(formatUnits(BigInt(delayed30.yesPrice || 0), 18));
+      const delayed120YesPrice = Number(formatUnits(BigInt(delayed120Plus.yesPrice || 0), 18));
+      const cancelledYesPrice = Number(formatUnits(BigInt(cancelled.yesPrice || 0), 18));
 
-      console.log('Parsed probabilities:', {
-        onTime: onTimeProbability,
-        cancelled: cancelledProbability,
-        delayed30: delayed30Probability,
-        delayed120: delayed120PlusProbability,
-      });
+      // Parse NO prices (scaled by 1e18)
+      const onTimeNoPrice = Number(formatUnits(BigInt(onTime.noPrice || 0), 18));
+      const delayed30NoPrice = Number(formatUnits(BigInt(delayed30.noPrice || 0), 18));
+      const delayed120NoPrice = Number(formatUnits(BigInt(delayed120Plus.noPrice || 0), 18));
+      const cancelledNoPrice = Number(formatUnits(BigInt(cancelled.noPrice || 0), 18));
 
       const outcomes: MarketOutcome[] = [
         {
           type: "ON_TIME" as OutcomeType,
-          yesPrice: onTimeProbability / 100,
-          impliedProbability: onTimeProbability,
-          totalShares: totalOnTimeShares,
-        },
-        {
-          type: "CANCELLED" as OutcomeType,
-          yesPrice: cancelledProbability / 100,
-          impliedProbability: cancelledProbability,
-          totalShares: totalCancelledShares,
+          yesPrice: onTimeYesPrice,
+          noPrice: onTimeNoPrice,
+          impliedProbability: onTimeYesPrice * 100,
+          yesShares: BigInt(onTime.yesShares || 0),
+          noShares: BigInt(onTime.noShares || 0),
+          outcomeIndex: 1,
         },
         {
           type: "DELAY_30" as OutcomeType,
-          yesPrice: delayed30Probability / 100,
-          impliedProbability: delayed30Probability,
-          totalShares: totalDelayed30Shares,
+          yesPrice: delayed30YesPrice,
+          noPrice: delayed30NoPrice,
+          impliedProbability: delayed30YesPrice * 100,
+          yesShares: BigInt(delayed30.yesShares || 0),
+          noShares: BigInt(delayed30.noShares || 0),
+          outcomeIndex: 2,
         },
         {
           type: "DELAY_120_PLUS" as OutcomeType,
-          yesPrice: delayed120PlusProbability / 100,
-          impliedProbability: delayed120PlusProbability,
-          totalShares: totalDelayed120PlusShares,
+          yesPrice: delayed120YesPrice,
+          noPrice: delayed120NoPrice,
+          impliedProbability: delayed120YesPrice * 100,
+          yesShares: BigInt(delayed120Plus.yesShares || 0),
+          noShares: BigInt(delayed120Plus.noShares || 0),
+          outcomeIndex: 3,
+        },
+        {
+          type: "CANCELLED" as OutcomeType,
+          yesPrice: cancelledYesPrice,
+          noPrice: cancelledNoPrice,
+          impliedProbability: cancelledYesPrice * 100,
+          yesShares: BigInt(cancelled.yesShares || 0),
+          noShares: BigInt(cancelled.noShares || 0),
+          outcomeIndex: 4,
         },
       ];
 
@@ -165,7 +177,7 @@ export default function MarketsPage() {
         route: `${flight.departureCode} → ${flight.destinationCode}`,
         totalLiquidity: totalLiquidityValue,
         airline: flight.airlineCode,
-        outcomes: outcomes, // Show all outcomes with their probabilities
+        outcomes: outcomes,
         outcome: Number(flight.outcome || 0),
       };
     });
@@ -194,7 +206,7 @@ export default function MarketsPage() {
       (sum, market) =>
         sum +
         market.outcomes.reduce(
-          (outcomeSum, outcome) => outcomeSum + Number(formatUnits(outcome.totalShares, 18)),
+          (outcomeSum, outcome) => outcomeSum + Number(formatUnits(outcome.yesShares + outcome.noShares, 18)),
           0
         ),
       0
@@ -204,7 +216,7 @@ export default function MarketsPage() {
         (sum, market) =>
           sum +
           market.outcomes.reduce(
-            (outcomeSum, outcome) => outcomeSum + outcome.impliedProbability,
+            (outcomeSum, outcome) => outcomeSum + outcome.yesPrice,
             0
           ) /
             (market.outcomes.length || 1),
@@ -215,7 +227,7 @@ export default function MarketsPage() {
       poolsActive: filteredMarkets.length,
       totalLiquidity: currency.format(liquidity),
       coverageDemand: currency.format(totalSharesCount),
-      avgRisk: percent.format(avgProbability / 100),
+      avgRisk: percent.format(avgProbability),
     };
   }, [filteredMarkets]);
 
@@ -358,9 +370,9 @@ export default function MarketsPage() {
                           </p>
                           <p className="text-base text-green-200">
                             {market.outcome === 1 && "On Time"}
-                            {market.outcome === 2 && "Cancelled"}
-                            {market.outcome === 3 && "Delayed 30+"}
-                            {market.outcome === 4 && "Delayed 120+"}
+                            {market.outcome === 2 && "Delayed 30+"}
+                            {market.outcome === 3 && "Delayed 120+"}
+                            {market.outcome === 4 && "Cancelled"}
                           </p>
                         </div>
                       )}
@@ -371,6 +383,9 @@ export default function MarketsPage() {
                           <OutcomeRow
                             key={`${market.id}-${outcome.type}`}
                             outcome={outcome}
+                            flightId={market.id}
+                            flightNumber={market.flightNumber}
+                            onSuccess={handleMarketCreated}
                           />
                         ))}
                       </div>
@@ -386,51 +401,75 @@ export default function MarketsPage() {
   );
 }
 
-function OutcomeRow({ outcome }: { outcome: MarketOutcome }) {
-  const [yesNo, setYesNo] = useState(true);
-  const hasShares = outcome.totalShares > 0n;
+function OutcomeRow({ 
+  outcome, 
+  flightId, 
+  flightNumber,
+  onSuccess 
+}: { 
+  outcome: MarketOutcome;
+  flightId: string;
+  flightNumber: string;
+  onSuccess?: () => void;
+}) {
+  const hasYesShares = outcome.yesShares > 0n;
+  const hasNoShares = outcome.noShares > 0n;
+  const hasAnyShares = hasYesShares || hasNoShares;
+  const totalShares = outcome.yesShares + outcome.noShares;
   
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-slate-300 sm:text-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 text-white">
-        <span className="font-semibold">{outcomeLabels[outcome.type]}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-sky-200 text-sm font-semibold">
-            {percent.format(outcome.impliedProbability / 100)}
-          </span>
-          <div className="flex gap-1">
-            <Button
-              className={`h-6 w-8 hover:border-sky-200 hover:bg-sky-200/10 ${
-                yesNo
-                  ? "bg-white text-slate-900 hover:bg-slate-100"
-                  : "border-white/30 bg-transparent text-white"
-              }`}
-              size="icon"
-              onClick={() => setYesNo(true)}
-            >
-              YES
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className={`h-6 w-8 hover:border-sky-200 hover:bg-sky-200/10 ${
-                yesNo
-                  ? "border-white/30 bg-transparent text-white"
-                  : "bg-white text-slate-900 hover:bg-slate-100"
-              }`}
-              onClick={() => setYesNo(false)}
-            >
-              NO
-            </Button>
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-semibold text-white">{outcomeLabels[outcome.type]}</span>
+        {hasAnyShares ? (
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <div className="text-xs text-emerald-300">YES {percent.format(outcome.yesPrice)}</div>
+              <div className="text-xs text-red-300">NO {percent.format(outcome.noPrice)}</div>
+            </div>
+            <BuySellSharesDialog
+              flightId={flightId}
+              flightNumber={flightNumber}
+              outcomeType={outcome.outcomeIndex}
+              outcomeName={outcomeLabels[outcome.type]}
+              yesPrice={outcome.yesPrice}
+              noPrice={outcome.noPrice}
+              onSuccess={onSuccess}
+            />
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">No shares yet</span>
+            <BuySellSharesDialog
+              flightId={flightId}
+              flightNumber={flightNumber}
+              outcomeType={outcome.outcomeIndex}
+              outcomeName={outcomeLabels[outcome.type]}
+              yesPrice={outcome.yesPrice}
+              noPrice={outcome.noPrice}
+              onSuccess={onSuccess}
+            />
+          </div>
+        )}
       </div>
       <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 sm:text-xs">
-        <span>Price {price.format(outcome.yesPrice)}</span>
         <span>
-          {hasShares 
-            ? `${formatUnits(outcome.totalShares, 18).substring(0, 8)} shares` 
-            : "No positions yet"}
+          {hasAnyShares ? (
+            <>
+              <span className="text-emerald-400">YES: {formatUnits(outcome.yesShares, 18).substring(0, 6)}</span>
+              {" / "}
+              <span className="text-red-400">NO: {formatUnits(outcome.noShares, 18).substring(0, 6)}</span>
+            </>
+          ) : (
+            "No positions yet"
+          )}
+        </span>
+        <span>
+          {hasAnyShares ? (
+            <>Total: {formatUnits(totalShares, 18).substring(0, 8)} shares</>
+          ) : (
+            "Place first order"
+          )}
         </span>
       </div>
     </div>

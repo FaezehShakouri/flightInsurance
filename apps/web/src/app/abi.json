@@ -17,6 +17,25 @@
       },
       {
         "indexed": false,
+        "internalType": "string",
+        "name": "flightNumber",
+        "type": "string"
+      }
+    ],
+    "name": "MarketCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "flightId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
         "internalType": "enum FlightDelayPredictionMarket.Outcome",
         "name": "outcome",
         "type": "uint8"
@@ -48,6 +67,12 @@
       },
       {
         "indexed": false,
+        "internalType": "enum FlightDelayPredictionMarket.Position",
+        "name": "position",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "shares",
         "type": "uint256"
@@ -55,7 +80,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "cost",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "pricePerShare",
         "type": "uint256"
       }
     ],
@@ -85,6 +116,12 @@
       },
       {
         "indexed": false,
+        "internalType": "enum FlightDelayPredictionMarket.Position",
+        "name": "position",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "shares",
         "type": "uint256"
@@ -92,7 +129,13 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "amount",
+        "name": "payout",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "pricePerShare",
         "type": "uint256"
       }
     ],
@@ -134,13 +177,9 @@
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "oracle", "type": "address" }
-    ],
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
     "name": "authorizedOracles",
-    "outputs": [
-      { "internalType": "bool", "name": "authorized", "type": "bool" }
-    ],
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -152,11 +191,27 @@
         "name": "outcome",
         "type": "uint8"
       },
-      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+      {
+        "internalType": "enum FlightDelayPredictionMarket.Position",
+        "name": "position",
+        "type": "uint8"
+      },
+      { "internalType": "uint256", "name": "sharesToBuy", "type": "uint256" },
+      { "internalType": "uint256", "name": "pricePerShare", "type": "uint256" }
     ],
     "name": "buyShares",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "shares", "type": "uint256" },
+      { "internalType": "uint256", "name": "price", "type": "uint256" }
+    ],
+    "name": "calculateBuyCost",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -174,32 +229,12 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "flightId", "type": "bytes32" },
-      {
-        "internalType": "enum FlightDelayPredictionMarket.Outcome",
-        "name": "outcome",
-        "type": "uint8"
-      },
-      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+      { "internalType": "uint256", "name": "shares", "type": "uint256" },
+      { "internalType": "uint256", "name": "price", "type": "uint256" }
     ],
-    "name": "calculateSharesForAmount",
+    "name": "calculateSellPayout",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "bytes32", "name": "flightId", "type": "bytes32" },
-      {
-        "internalType": "enum FlightDelayPredictionMarket.Outcome",
-        "name": "outcome",
-        "type": "uint8"
-      },
-      { "internalType": "uint256", "name": "sharesToSell", "type": "uint256" }
-    ],
-    "name": "calculateTokensForShares",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -225,20 +260,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "feeDecimalPlaces",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "feePercentage",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "name": "flightIds",
     "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
@@ -246,9 +267,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "bytes32", "name": "flightId", "type": "bytes32" }
-    ],
+    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
     "name": "flights",
     "outputs": [
       { "internalType": "string", "name": "flightNumber", "type": "string" },
@@ -263,22 +282,42 @@
       },
       {
         "internalType": "uint256",
-        "name": "totalOnTimeShares",
+        "name": "onTimeYesShares",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "totalCancelledShares",
+        "name": "onTimeNoShares",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "totalDelayed30Shares",
+        "name": "delayed30YesShares",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "totalDelayed120PlusShares",
+        "name": "delayed30NoShares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "delayed120PlusYesShares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "delayed120PlusNoShares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cancelledYesShares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "cancelledNoShares",
         "type": "uint256"
       }
     ],
@@ -319,44 +358,112 @@
             "type": "uint8"
           },
           {
-            "internalType": "uint256",
-            "name": "totalOnTimeShares",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "yesShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "yesPrice",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noPrice",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct FlightDelayPredictionMarket.OutcomeInfo",
+            "name": "onTime",
+            "type": "tuple"
           },
           {
-            "internalType": "uint256",
-            "name": "totalCancelledShares",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "yesShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "yesPrice",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noPrice",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct FlightDelayPredictionMarket.OutcomeInfo",
+            "name": "delayed30",
+            "type": "tuple"
           },
           {
-            "internalType": "uint256",
-            "name": "totalDelayed30Shares",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "yesShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "yesPrice",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noPrice",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct FlightDelayPredictionMarket.OutcomeInfo",
+            "name": "delayed120Plus",
+            "type": "tuple"
           },
           {
-            "internalType": "uint256",
-            "name": "totalDelayed120PlusShares",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "onTimeProbability",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "cancelledProbability",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "delayed30Probability",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "delayed120PlusProbability",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "yesShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "yesPrice",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noPrice",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct FlightDelayPredictionMarket.OutcomeInfo",
+            "name": "cancelled",
+            "type": "tuple"
           }
         ],
         "internalType": "struct FlightDelayPredictionMarket.FlightInfo[]",
@@ -410,44 +517,112 @@
             "type": "uint8"
           },
           {
-            "internalType": "uint256",
-            "name": "totalOnTimeShares",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "yesShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "yesPrice",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noPrice",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct FlightDelayPredictionMarket.OutcomeInfo",
+            "name": "onTime",
+            "type": "tuple"
           },
           {
-            "internalType": "uint256",
-            "name": "totalCancelledShares",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "yesShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "yesPrice",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noPrice",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct FlightDelayPredictionMarket.OutcomeInfo",
+            "name": "delayed30",
+            "type": "tuple"
           },
           {
-            "internalType": "uint256",
-            "name": "totalDelayed30Shares",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "yesShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "yesPrice",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noPrice",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct FlightDelayPredictionMarket.OutcomeInfo",
+            "name": "delayed120Plus",
+            "type": "tuple"
           },
           {
-            "internalType": "uint256",
-            "name": "totalDelayed120PlusShares",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "onTimeProbability",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "cancelledProbability",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "delayed30Probability",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "delayed120PlusProbability",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "yesShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "yesPrice",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "noPrice",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct FlightDelayPredictionMarket.OutcomeInfo",
+            "name": "cancelled",
+            "type": "tuple"
           }
         ],
         "internalType": "struct FlightDelayPredictionMarket.FlightInfo",
@@ -465,26 +640,14 @@
         "internalType": "enum FlightDelayPredictionMarket.Outcome",
         "name": "outcome",
         "type": "uint8"
+      },
+      {
+        "internalType": "enum FlightDelayPredictionMarket.Position",
+        "name": "position",
+        "type": "uint8"
       }
     ],
     "name": "getPrice",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "bytes32", "name": "flightId", "type": "bytes32" },
-      { "internalType": "address", "name": "user", "type": "address" }
-    ],
-    "name": "hasClaimed",
-    "outputs": [{ "internalType": "bool", "name": "claimed", "type": "bool" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "minLiquidity",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
@@ -497,12 +660,25 @@
         "internalType": "enum FlightDelayPredictionMarket.Outcome",
         "name": "outcome",
         "type": "uint8"
+      },
+      {
+        "internalType": "enum FlightDelayPredictionMarket.Position",
+        "name": "position",
+        "type": "uint8"
       }
     ],
-    "name": "outcomePositions",
-    "outputs": [
-      { "internalType": "uint256", "name": "shares", "type": "uint256" }
+    "name": "getUserPosition",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "", "type": "bytes32" },
+      { "internalType": "address", "name": "", "type": "address" }
     ],
+    "name": "hasClaimed",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -515,13 +691,21 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "lightId", "type": "bytes32" },
-      { "internalType": "address", "name": "user", "type": "address" }
+      { "internalType": "bytes32", "name": "", "type": "bytes32" },
+      { "internalType": "address", "name": "", "type": "address" },
+      {
+        "internalType": "enum FlightDelayPredictionMarket.Outcome",
+        "name": "",
+        "type": "uint8"
+      },
+      {
+        "internalType": "enum FlightDelayPredictionMarket.Position",
+        "name": "",
+        "type": "uint8"
+      }
     ],
     "name": "positions",
-    "outputs": [
-      { "internalType": "uint256", "name": "shares", "type": "uint256" }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -556,48 +740,15 @@
         "name": "outcome",
         "type": "uint8"
       },
-      { "internalType": "uint256", "name": "sharesToSell", "type": "uint256" }
+      {
+        "internalType": "enum FlightDelayPredictionMarket.Position",
+        "name": "position",
+        "type": "uint8"
+      },
+      { "internalType": "uint256", "name": "sharesToSell", "type": "uint256" },
+      { "internalType": "uint256", "name": "pricePerShare", "type": "uint256" }
     ],
     "name": "sellShares",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "newFeeDecimalPlaces",
-        "type": "uint256"
-      }
-    ],
-    "name": "setFeeDecimalPlaces",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "newFeePercentage",
-        "type": "uint256"
-      }
-    ],
-    "name": "setFeePercentage",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "newMinLiquidity",
-        "type": "uint256"
-      }
-    ],
-    "name": "setMinLiquidity",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
